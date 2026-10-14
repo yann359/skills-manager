@@ -37,6 +37,7 @@ import { useMultiSelect } from "../hooks/useMultiSelect";
 import { ConfirmDialog } from "../components/ConfirmDialog";
 import { TagRenameDialog } from "../components/TagRenameDialog";
 import { SkillDetailPanel } from "../components/SkillDetailPanel";
+import { ChineseSummaryToggle, SkillSummary } from "../components/SkillSummary";
 import { MultiSelectToolbar } from "../components/MultiSelectToolbar";
 import { BatchTagDialog } from "../components/BatchTagDialog";
 import { BatchSyncAgentDialog } from "../components/BatchSyncAgentDialog";
@@ -1115,7 +1116,7 @@ export function MySkills() {
             {skills.length}
           </span>
         </h1>
-
+        <ChineseSummaryToggle />
       </div>
 
       <div className="app-toolbar">
@@ -1515,7 +1516,7 @@ export function MySkills() {
 
                   <div className="px-3.5 pb-3">
                     <p className="text-[13px] leading-[18px] text-muted truncate">
-                      {skill.description || "—"}
+                      <SkillSummary name={skill.name} description={skill.description} />
                     </p>
                     {((badge && !showUpdatePill) || conflictIds.has(skill.id)) && (
                       <div className="mt-2 flex flex-wrap items-center gap-1.5">
@@ -1717,7 +1718,7 @@ export function MySkills() {
                 </h3>
 
                 <p className="min-w-0 flex-1 truncate text-[13px] text-muted">
-                  {skill.description || "—"}
+                  <SkillSummary name={skill.name} description={skill.description} />
                 </p>
 
                 <div className="flex shrink-0 items-center gap-1.5">

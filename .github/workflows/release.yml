@@ -11,6 +11,8 @@ permissions:
 
 jobs:
   build:
+    # Personal releases upload locally verified Windows assets after owner approval.
+    if: github.repository == 'xingkongliang/skills-manager'
     strategy:
       fail-fast: false
       matrix:

@@ -1,7 +1,7 @@
 {
   "name": "skills-manager",
   "private": true,
-  "version": "1.41.0",
+  "version": "1.41.1-yann.1",
   "license": "MIT",
   "type": "module",
   "scripts": {
@@ -13,6 +13,7 @@
     "tauri": "tauri",
     "tauri:dev": "tauri dev --config src-tauri/tauri.dev.conf.json",
     "tauri:build": "tauri build",
+    "tauri:build:local": "tauri build --no-sign",
     "cli": "node scripts/run-rust-cli.mjs cli",
     "cli:build": "node scripts/run-rust-cli.mjs build",
     "cli:install": "node scripts/run-rust-cli.mjs install"
@@ -38,6 +39,8 @@
     "react-markdown": "^10.1.0",
     "react-router-dom": "^7.13.1",
     "remark-gfm": "^4.0.1",
+    "remark-parse": "^11.0.0",
+    "unified": "^11.0.5",
     "sonner": "^2.0.7",
     "tailwind-merge": "^3.5.0"
   },

@@ -810,7 +810,6 @@ pub fn run() {
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_clipboard_manager::init())
-        .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(
             tauri_plugin_window_state::Builder::default()
                 .with_state_flags(
@@ -835,6 +834,15 @@ pub fn run() {
                     .level_for("hyper", log::LevelFilter::Warn)
                     .level_for("reqwest", log::LevelFilter::Warn)
                     .level_for("rustls", log::LevelFilter::Warn)
+                    // Tao 0.34 on Windows fills in missing event-loop markers
+                    // before continuing. Keep errors and other warnings visible,
+                    // but omit its repetitive, recovered ordering warnings.
+                    .filter(|metadata| {
+                        !(cfg!(windows)
+                            && metadata.level() == log::Level::Warn
+                            && metadata.target()
+                                == "tao::platform_impl::platform::event_loop::runner")
+                    })
                     .max_file_size(5 * 1024 * 1024)
                     .rotation_strategy(tauri_plugin_log::RotationStrategy::KeepSome(3))
                     .timezone_strategy(tauri_plugin_log::TimezoneStrategy::UseLocal)
@@ -1000,6 +1008,17 @@ pub fn run() {
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
+            // AI translation verification (no Skill writes)
+            commands::ai_translation::get_ai_translation_status,
+            commands::ai_translation::set_ai_translation_consent,
+            commands::ai_translation::save_ai_translation_key,
+            commands::ai_translation::clear_ai_translation_key,
+            commands::ai_translation::test_ai_translation_connection,
+            commands::ai_translation::get_cached_skill_translation,
+            commands::ai_translation::reject_skill_translation_fragments,
+            commands::ai_translation::get_cached_skill_summary,
+            commands::ai_translation::translate_skill_document,
+            commands::ai_translation::cancel_skill_translation,
             // Tools
             commands::tools::get_tool_status,
             commands::tools::set_tool_enabled,

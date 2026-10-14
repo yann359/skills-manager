@@ -4,7 +4,8 @@ use std::sync::Arc;
 use tauri::{Manager, State};
 
 use crate::core::{
-    central_repo, error::AppError, file_manager, log_sanitize, skill_store::SkillStore, skillssh_api,
+    central_repo, error::AppError, file_manager, log_sanitize, skill_store::SkillStore,
+    skillssh_api,
 };
 
 #[derive(serde::Serialize)]
@@ -35,11 +36,7 @@ pub async fn get_settings(
 /// log file layout.
 #[tauri::command]
 pub fn log_startup_event(label: String, elapsed_ms: u64) {
-    let sanitized: String = label
-        .chars()
-        .filter(|c| !c.is_control())
-        .take(64)
-        .collect();
+    let sanitized: String = label.chars().filter(|c| !c.is_control()).take(64).collect();
     let display = if sanitized.is_empty() {
         "(empty)".to_string()
     } else {
@@ -146,6 +143,17 @@ pub async fn check_app_update(
     store: State<'_, Arc<SkillStore>>,
 ) -> Result<AppUpdateInfo, AppError> {
     let current_version = app.config().version.clone().unwrap_or_default();
+    // Unsigned personal builds use manual, reviewed Release assets. Never offer
+    // an upstream binary that would overwrite the user's translation changes.
+    if current_version.contains("-yann.") {
+        return Ok(AppUpdateInfo {
+            has_update: false,
+            latest_version: current_version.clone(),
+            current_version,
+            release_url: "https://github.com/yann359/skills-manager/releases".into(),
+        });
+    }
+
     let proxy_url = store.proxy_url();
     tauri::async_runtime::spawn_blocking(move || {
         let client = skillssh_api::build_http_client(proxy_url.as_deref(), 15);
@@ -443,7 +451,10 @@ fn collapse_consecutive_repeats(text: &str) -> String {
         let count = j - i;
         out.push(lines[i].to_string());
         if count >= 3 {
-            out.push(format!("... (line above repeated {} more times)", count - 1));
+            out.push(format!(
+                "... (line above repeated {} more times)",
+                count - 1
+            ));
         } else if count == 2 {
             out.push(lines[i + 1].to_string());
         }
@@ -679,7 +690,10 @@ pub async fn update_install_blocker() -> Result<Option<String>, AppError> {
         // Gatekeeper runs a quarantined copy from a randomized read-only mount
         // that is discarded on quit, so an update written there would vanish
         // rather than apply.
-        if exe.components().any(|c| c.as_os_str() == "AppTranslocation") {
+        if exe
+            .components()
+            .any(|c| c.as_os_str() == "AppTranslocation")
+        {
             return Ok(Some("relocate".to_string()));
         }
         // …/Foo.app/Contents/MacOS/foo — the updater swaps the bundle inside

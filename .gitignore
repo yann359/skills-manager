@@ -38,3 +38,21 @@ CLAUDE.md
 AGENTS.md
 .loop-log
 
+
+# Personal data and local translation/build artifacts
+/build-cache.local/
+*.local.*
+/.codex/
+/.agents/
+/.pi/
+/private-skills/
+/ai-translation/
+/translation-cache/
+credentials*.json
+*.key
+*.pem
+*.pfx
+*.p12
+# Publish installers as GitHub Release assets, never source blobs
+*.exe
+*.msi

@@ -23,7 +23,7 @@ import {
 } from "../lib/tauri";
 import { SkillSourceDiffViewer } from "./SkillSourceDiffViewer";
 import { DetailSheet } from "./DetailSheet";
-import { SkillMarkdown } from "./SkillMarkdown";
+import { SkillTranslationReader } from "./SkillTranslationReader";
 import { AgentToggleSection, type AgentToggleItem } from "./AgentToggleSection";
 import { SkillProjectsSection } from "./SkillProjectsSection";
 import { SyncDots } from "./SyncDots";
@@ -307,7 +307,7 @@ function SkillDetailPanelContent({
     <DetailSheet
       open={true}
       title={skill.name}
-      description={skill.description ? <p className="line-clamp-3">{skill.description}</p> : undefined}
+      description={contentTab === "diff" ? skill.description : undefined}
       meta={meta}
       onClose={onClose}
     >
@@ -374,12 +374,12 @@ function SkillDetailPanelContent({
         sourceLoading ? (
           <div className="mt-12 text-center text-[13px] text-muted">{t("common.loading")}</div>
         ) : activeSourceDoc ? (
-          <SkillMarkdown content={activeSourceDoc.content} />
+          <SkillTranslationReader key={`${skill.id}:source`} name={skill.name} content={activeSourceDoc.content} description={skill.description ?? ""} />
         ) : (
           <div className="mt-12 text-center text-[13px] text-muted">{t("mySkills.sourceDiffUnavailable")}</div>
         )
       ) : activeDoc ? (
-        <SkillMarkdown content={activeDoc.content} />
+        <SkillTranslationReader key={`${skill.id}:local`} name={skill.name} content={activeDoc.content} description={skill.description ?? ""} />
       ) : (
         <div className="mt-12 text-center text-[13px] text-muted">{t("common.documentMissing")}</div>
       )}
