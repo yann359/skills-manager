@@ -1,3 +1,4 @@
+pub mod ai_translation;
 pub mod app_state;
 pub mod audit_log;
 pub mod auto_backup;
@@ -34,4 +35,5 @@ pub mod sync_metadata;
 pub mod timing;
 pub mod tool_adapters;
 pub mod tool_service;
+pub mod translation_document;
 pub mod well_known;

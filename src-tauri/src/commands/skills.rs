@@ -1237,6 +1237,12 @@ pub async fn preview_git_install(
 
     tauri::async_runtime::spawn_blocking(move || {
         use tauri::Emitter;
+        // Use the same URL allowlist as direct Git installation before a
+        // shorthand normalization can turn an unsupported scheme into a URL.
+        if !well_known::is_site_ref(&repo_url) {
+            git_fetcher::validate_git_url(&repo_url)
+                .map_err(|error| AppError::invalid_input(error.to_string()))?;
+        }
         if well_known::is_site_ref(&repo_url) {
             app_handle
                 .emit(
@@ -1410,6 +1416,8 @@ pub async fn confirm_git_install(
                 return Ok(());
             }
 
+            git_fetcher::validate_git_url(&repo_url)
+                .map_err(|error| AppError::invalid_input(error.to_string()))?;
             let parsed = git_fetcher::parse_git_source_resolved(&repo_url, proxy_url.as_deref());
             let skill_dir = resolve_skill_dir(&temp_path, parsed.subpath.as_deref(), None)?;
             let all_dirs = collect_git_skill_dirs(&skill_dir);

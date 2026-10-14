@@ -35,7 +35,8 @@ import { AgentToggleSection, type AgentToggleItem } from "../components/AgentTog
 import { ToggleSwitch } from "../components/ToggleSwitch";
 import { ProjectAgentDots } from "../components/ProjectAgentDots";
 import { PresetBar } from "../components/PresetBar";
-import { SkillMarkdown } from "../components/SkillMarkdown";
+import { SkillTranslationReader } from "../components/SkillTranslationReader";
+import { ChineseSummaryToggle, SkillSummary } from "../components/SkillSummary";
 import { DocumentDiffViewer } from "../components/DocumentDiffViewer";
 import { getTagActiveColor, getTagColor, pruneStaleTagFilters, UNTAGGED_FILTER } from "../lib/skillTags";
 import { enabledInstalledAgentKeys, getDefaultExportAgents } from "../lib/exportAgents";
@@ -927,6 +928,7 @@ export function ProjectDetail() {
           </div>
 
           <div className="flex min-w-0 flex-[2_1_560px] flex-wrap items-center justify-end gap-2">
+            <ChineseSummaryToggle />
             <div className="relative w-full min-w-[220px] max-w-[300px]">
               <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted" />
               <input
@@ -1273,7 +1275,7 @@ export function ProjectDetail() {
 
                   <div className="px-3.5 pb-3">
                     <p className="text-[13px] leading-[18px] text-muted truncate">
-                      {skill.description || "\u2014"}
+                      <SkillSummary name={skill.name} description={skill.description} />
                     </p>
                     {skill.tags.length > 0 && (
                       <div className="mt-2 flex flex-wrap items-center gap-1">
@@ -1416,7 +1418,7 @@ export function ProjectDetail() {
                 </h3>
 
                 <p className="min-w-0 flex-1 truncate text-[13px] text-muted">
-                  {skill.description || "\u2014"}
+                  <SkillSummary name={skill.name} description={skill.description} />
                 </p>
 
                 {skill.tags.length > 0 && (
@@ -1692,7 +1694,7 @@ function ProjectSkillDetailPanel({
     <DetailSheet
       open={true}
       title={skill.name}
-      description={skill.description ? <p className="line-clamp-3">{skill.description}</p> : undefined}
+      description={contentTab === "diff" ? skill.description : undefined}
       meta={meta}
       onClose={onClose}
     >
@@ -1742,12 +1744,12 @@ function ProjectSkillDetailPanel({
         centerDocLoading ? (
           <div className="mt-12 text-center text-[13px] text-muted">{t("common.loading")}</div>
         ) : centerDocContent ? (
-          <SkillMarkdown content={centerDocContent} />
+          <SkillTranslationReader key={`${skill.name}:center`} name={skill.name} content={centerDocContent} description={skill.description ?? ""} />
         ) : (
           <div className="mt-12 text-center text-[13px] text-muted">{t("mySkills.sourceDiffUnavailable")}</div>
         )
       ) : docContent ? (
-        <SkillMarkdown content={docContent} />
+        <SkillTranslationReader key={`${skill.name}:local`} name={skill.name} content={docContent} description={skill.description ?? ""} />
       ) : (
         <div className="mt-12 text-center text-[13px] text-muted">{t("common.documentMissing")}</div>
       )}

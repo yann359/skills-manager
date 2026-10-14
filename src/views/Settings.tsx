@@ -58,10 +58,12 @@ import { useApp } from "../context/AppContext";
 import { useThemeContext } from "../context/ThemeContext";
 import { AgentIcon } from "../components/AgentIcon";
 import { ToggleSwitch } from "../components/ToggleSwitch";
+import { AiTranslationSettings } from "../components/AiTranslationSettings";
 import * as api from "../lib/tauri";
 import { applyTextSize } from "../lib/textScale";
 import { getErrorMessage } from "../lib/error";
 import { IS_MACOS, IS_WINDOWS } from "../lib/platform";
+import packageInfo from "../../package.json";
 import type { Theme } from "../hooks/useTheme";
 
 /** Platforms whose updater artifact can replace the running install.
@@ -69,7 +71,8 @@ import type { Theme } from "../hooks/useTheme";
  *  Linux is excluded on purpose: only the AppImage can be updated in place,
  *  and a .deb/.rpm install is indistinguishable from it here, so those users
  *  keep the download link rather than a button that fails for half of them. */
-const CAN_INSTALL_IN_APP = IS_WINDOWS || IS_MACOS;
+const PERSONAL_BUILD = packageInfo.version.includes("-yann.");
+const CAN_INSTALL_IN_APP = !PERSONAL_BUILD && (IS_WINDOWS || IS_MACOS);
 
 const RESTART_TOAST_ID = "app-update-restart";
 
@@ -196,7 +199,7 @@ export function Settings() {
   const [addingCustom, setAddingCustom] = useState(false);
   const [showMoreAgents, setShowMoreAgents] = useState(false);
 
-  const GITHUB_URL = "https://github.com/xingkongliang/skills-manager";
+  const GITHUB_URL = PERSONAL_BUILD ? "https://github.com/yann359/skills-manager" : "https://github.com/xingkongliang/skills-manager";
   const WEBSITE_URL = "https://skillsmanager.dev";
 
   const startEditPath = useCallback((key: string, currentPath: string) => {
@@ -640,6 +643,7 @@ export function Settings() {
   };
 
   const handleCheckUpdate = async () => {
+    if (PERSONAL_BUILD) { await openUrl(`${GITHUB_URL}/releases`); return; }
     setCheckingUpdate(true);
     try {
       const info = await refreshAppUpdate();
@@ -656,6 +660,7 @@ export function Settings() {
   };
 
   const handleAutoUpdate = async () => {
+    if (PERSONAL_BUILD) { await openUrl(`${GITHUB_URL}/releases`); return; }
     setInstalling(true);
     try {
       // Read-only image or Gatekeeper-translocated copy: the updater would
@@ -1052,6 +1057,7 @@ export function Settings() {
       </div>
 
       <div className="space-y-6">
+        <AiTranslationSettings />
         {/* Agent status */}
         <section>
           <div className="mb-3 flex flex-wrap items-center justify-between gap-2">

@@ -1,7 +1,7 @@
 {
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
   "productName": "skills-manager",
-  "version": "1.41.0",
+  "version": "1.41.1-yann.1",
   "identifier": "com.agentskills.desktop",
   "build": {
     "frontendDist": "../dist",
@@ -29,17 +29,10 @@
       "csp": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' asset: https://asset.localhost data: blob: https:; font-src 'self' data:; connect-src ipc: http://ipc.localhost https:"
     }
   },
-  "plugins": {
-    "updater": {
-      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IERBRUYwMTBDOEQ3MDdEODAKUldTQWZYQ05EQUh2Mm0wNDZtNm5VYWJpbjRaZVJQRUhrQ2tkOXc3MHBWZ2VaREo0OVd3WEU3d0oK",
-      "endpoints": [
-        "https://github.com/xingkongliang/skills-manager/releases/latest/download/latest.json"
-      ]
-    }
-  },
+  "plugins": {},
   "bundle": {
     "active": true,
-    "createUpdaterArtifacts": true,
+    "createUpdaterArtifacts": false,
     "targets": "all",
     "icon": [
       "icons/32x32.png",
@@ -50,6 +43,11 @@
     ],
     "macOS": {
       "minimumSystemVersion": "10.15"
+    },
+    "windows": {
+      "wix": {
+        "version": "1.41.1001"
+      }
     }
   }
 }

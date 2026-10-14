@@ -1,6 +1,7 @@
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { cn } from "../utils";
+import { markdownBody } from "../lib/translationMarkdown";
 
 interface SkillMarkdownProps {
   content: string;
@@ -8,19 +9,14 @@ interface SkillMarkdownProps {
 }
 
 function stripMarkdownFrontmatter(content: string) {
-  if (!content.startsWith("---\n")) return content;
-
-  const end = content.indexOf("\n---\n", 4);
-  if (end === -1) return content;
-
-  return content.slice(end + 5).trimStart();
+  return markdownBody(content).body;
 }
 
 export function SkillMarkdown({ content, className }: SkillMarkdownProps) {
   const markdown = stripMarkdownFrontmatter(content);
 
   return (
-    <article className={cn("mx-auto w-full max-w-[1240px] text-[13px] leading-6 text-secondary", className)}>
+    <article className={cn("mx-auto min-w-0 w-full max-w-[1240px] [overflow-wrap:anywhere] text-[13px] leading-6 text-secondary", className)}>
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
         components={{

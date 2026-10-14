@@ -27,7 +27,8 @@ import { ConfirmDialog } from "../components/ConfirmDialog";
 import { PresetBar } from "../components/PresetBar";
 import { AgentIcon } from "../components/AgentIcon";
 import { DetailSheet } from "../components/DetailSheet";
-import { SkillMarkdown } from "../components/SkillMarkdown";
+import { SkillTranslationReader } from "../components/SkillTranslationReader";
+import { ChineseSummaryToggle, SkillSummary } from "../components/SkillSummary";
 import { DocumentDiffViewer } from "../components/DocumentDiffViewer";
 import * as api from "../lib/tauri";
 import type { ManagedSkill, ProjectSkill } from "../lib/tauri";
@@ -64,7 +65,7 @@ function WorkspaceSkillCard({
 }: {
   viewMode: "grid" | "list";
   title: string;
-  description?: string | null;
+  description?: ReactNode;
   tags?: WorkspaceSkillCardTag[];
   status: WorkspaceSkillCardStatus;
   fileCount?: number;
@@ -911,6 +912,7 @@ export function WorkspaceView({ config }: { config: WorkspaceConfig }) {
           </div>
 
           <div className="flex min-w-0 flex-[2_1_520px] flex-wrap items-center justify-end gap-2">
+            <ChineseSummaryToggle />
             <div className="relative w-full min-w-[220px] max-w-[320px]">
               <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted" />
               <input
@@ -1137,7 +1139,7 @@ export function WorkspaceView({ config }: { config: WorkspaceConfig }) {
                 key={key}
                 viewMode={viewMode}
                 title={skill.name}
-                description={skill.description || skill.relative_path}
+                description={<SkillSummary name={skill.name} description={skill.description || skill.relative_path} />}
                 tags={skill.tags.map((tag) => ({ label: tag, className: getTagColor(tag, allLocalTags) }))}
                 status={statusMeta}
                 fileCount={skill.files.length}
@@ -1172,7 +1174,7 @@ export function WorkspaceView({ config }: { config: WorkspaceConfig }) {
       <DetailSheet
         open={!!localDetailSkill}
         title={localDetailSkill?.name ?? ""}
-        description={localDetailSkill?.description}
+        description={localContentTab === "diff" ? localDetailSkill?.description : undefined}
         meta={
           localDetailSkill ? (
             <div className="flex flex-wrap items-center gap-2">
@@ -1226,12 +1228,12 @@ export function WorkspaceView({ config }: { config: WorkspaceConfig }) {
           localCenterDocLoading ? (
             <div className="mt-12 text-center text-[13px] text-muted">{t("common.loading")}</div>
           ) : localCenterDocContent ? (
-            <SkillMarkdown content={localCenterDocContent} />
+            <SkillTranslationReader key={`${localDetailSkill?.name}:center`} name={localDetailSkill?.name ?? ""} content={localCenterDocContent} description={localDetailSkill?.description ?? ""} />
           ) : (
             <div className="mt-12 text-center text-[13px] text-muted">{t("mySkills.sourceDiffUnavailable")}</div>
           )
         ) : localDocContent ? (
-          <SkillMarkdown content={localDocContent} />
+          <SkillTranslationReader key={`${localDetailSkill?.name}:local`} name={localDetailSkill?.name ?? ""} content={localDocContent} description={localDetailSkill?.description ?? ""} />
         ) : (
           <div className="mt-12 text-center text-[13px] text-muted">{t("common.documentMissing")}</div>
         )}
