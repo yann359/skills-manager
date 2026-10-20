@@ -101,3 +101,16 @@ never shipped in the demo.
 These are automated Chromium/Edge checks with isolated IPC fixtures; physical
 touchpad hardware and all Windows monitor DPI combinations were not exercised.
 Native scrolling keeps those input paths available without custom event handlers.
+
+### Release checks
+
+- GitHub Actions passed frontend checks, Windows/macOS Rust tests and Linux
+  compilation for the UI release.
+- The deployed Pages site returned HTTP 200; Dashboard → library → long Skill
+  detail navigation passed with no browser errors or failed asset requests.
+- Windows EXE and MSI were built as `1.41.1-yann.2`; MSI product version is
+  `1.41.1002`. Its UpgradeCode matches the previous installer.
+- The first local parallel Rust run exposed a test-fixture race: the duplicate
+  Skill-name sync test now uses the shared base-directory test lock and its own
+  temporary recovery directory. Only test code changed; application behavior is
+  unchanged. The directory override is restored even if the assertion panics.

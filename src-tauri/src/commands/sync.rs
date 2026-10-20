@@ -528,7 +528,21 @@ mod tests {
 
     #[test]
     fn sync_skill_to_tool_keeps_duplicate_skill_names_separate() {
+        // The reversible switch now stages deployments beneath base_dir().
+        // Isolate that process-wide setting as well as the database: other
+        // parallel tests must not remove this test's staging directory.
+        let _base_guard = crate::core::central_repo::test_base_dir_lock();
         let tmp = tempdir().unwrap();
+        crate::core::central_repo::set_test_base_dir_override(Some(
+            tmp.path().join("library"),
+        ));
+        struct ResetBaseDir;
+        impl Drop for ResetBaseDir {
+            fn drop(&mut self) {
+                crate::core::central_repo::set_test_base_dir_override(None);
+            }
+        }
+        let _reset = ResetBaseDir;
         let store = SkillStore::new(&tmp.path().join("test.db")).unwrap();
         let source_base = tmp.path().join("central");
         let target_base = tmp.path().join("agent-skills");
