@@ -114,3 +114,4 @@ Native scrolling keeps those input paths available without custom event handlers
   Skill-name sync test now uses the shared base-directory test lock and its own
   temporary recovery directory. Only test code changed; application behavior is
   unchanged. The directory override is restored even if the assertion panics.
+- The final local parallel Rust suite passed: **599 passed, 0 failed, 8 ignored**.
