@@ -28,6 +28,9 @@
     --color-accent-border: rgba(5,150,105,0.25);
     --color-danger: #DC2626;
     --color-danger-bg: rgba(220,38,38,0.08);
+    --scrollbar-track: var(--color-bg-secondary);
+    --scrollbar-thumb: #C4C4CC;
+    --scrollbar-thumb-hover: #A1A1AA;
   }
 
   /* Dark theme */
@@ -54,6 +57,8 @@
     --color-accent-border: rgba(16,185,129,0.25);
     --color-danger: #EF4444;
     --color-danger-bg: rgba(239,68,68,0.08);
+    --scrollbar-thumb: #71717A;
+    --scrollbar-thumb-hover: #A1A1AA;
   }
 
   /* System preference fallback (when no .dark class and user chose "system") */
@@ -74,19 +79,70 @@
     @apply bg-background text-primary font-sans antialiased overflow-hidden;
     letter-spacing: -0.005em;
   }
+
+  /* Native scrollbars preserve dragging, wheel, touchpad and keyboard input.
+     WebView2/WebKit use explicit dimensions so OS overlay preferences cannot
+     hide the thumb. Keep standard properties in the fallback only: Chromium's
+     non-auto scrollbar-color/width would override the pseudo-element styles. */
+  *::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+
+  *::-webkit-scrollbar-track,
+  *::-webkit-scrollbar-corner {
+    background: var(--scrollbar-track);
+  }
+
+  *::-webkit-scrollbar-thumb {
+    min-height: 32px;
+    border: 1px solid var(--scrollbar-track);
+    border-radius: 999px;
+    background: var(--scrollbar-thumb);
+  }
+
+  *::-webkit-scrollbar-thumb:hover,
+  *::-webkit-scrollbar-thumb:active {
+    background: var(--scrollbar-thumb-hover);
+  }
+
+  @supports not selector(::-webkit-scrollbar) {
+    * {
+      scrollbar-width: thin;
+      scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+    }
+
+    *:hover {
+      scrollbar-color: var(--scrollbar-thumb-hover) var(--scrollbar-track);
+    }
+  }
+
+  @media (forced-colors: active) {
+    :root {
+      --scrollbar-track: Canvas;
+      --scrollbar-thumb: ButtonText;
+      --scrollbar-thumb-hover: Highlight;
+    }
+  }
 }
 
 @layer components {
-  .scrollbar-hide::-webkit-scrollbar {
-    display: none;
+  /* Each page/sheet owns one vertical scroll region; the shell stays fixed.
+     A stable gutter avoids horizontal shifts without drawing an empty bar. */
+  .app-scroll-region {
+    @apply min-h-0 min-w-0 overflow-x-hidden overflow-y-auto;
+    scrollbar-gutter: stable;
+    overscroll-behavior-y: contain;
+    overflow-wrap: anywhere;
   }
-  .scrollbar-hide {
-    -ms-overflow-style: none;
-    scrollbar-width: none;
+
+  .app-scroll-region:focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: -2px;
   }
 
   .app-page {
-    @apply mx-auto flex min-h-full w-full max-w-[1200px] flex-col gap-6 pb-8;
+    @apply mx-auto flex min-h-full min-w-0 w-full max-w-[1200px] flex-col gap-6 pb-8;
   }
 
   .app-page-narrow {

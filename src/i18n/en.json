@@ -1,4 +1,15 @@
 {
+  "agentSwitch": {
+    "backup": "Safety backup",
+    "all": "All states", "enabled": "Enabled", "disabled": "Disabled", "unmanaged": "Unmanaged", "filter": "Filter enablement",
+    "enable": "Enable skill", "disable": "Disable skill", "limited": "Restricted", "exposed": "Undeployed · other sources remain",
+    "adopt": "Take over", "adoptTitle": "Safely take over local skill", "adopted": "Backed up and registered. Original directory unchanged; switches are now available.",
+    "adoptMessage": "Fully back up and verify the directory below, copy it into the library, then register ownership. This does not change the original directory or SKILL.md. Later disabling moves this deployment outside search paths; enabling restores its original path.",
+    "enabledToast": "Deployment verified on disk. Reload your agent's skills.", "disabledToast": "Deployment withdrawn and recovery files retained. Reload skills.",
+    "verifyFailed": "The resulting disk state failed verification. Rescan to inspect its actual state.",
+    "reloadHint": "This switch controls deployment independently of preset membership. Start a new Codex session or reload skills; Claude Code: /reload-skills if supported, otherwise a new session; Pi: /reload. Content already loaded into task context remains.",
+    "scopeHint": "States cover known global roots and registered projects. Plugins, unregistered projects, CLI flags and extra configuration may still expose the same skill; complete disabling across all sessions cannot be guaranteed."
+  },
   "app": {
     "name": "Skills Manager"
   },

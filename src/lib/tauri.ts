@@ -846,6 +846,30 @@ export const slugifySkillNames = (names: string[]) =>
 export const getGlobalLocalSkills = (agent: string) =>
   invoke<ProjectSkill[]>("get_global_local_skills", { agent });
 
+export interface AgentSkillState extends ProjectSkill {
+  managed: boolean;
+  blocked_reason: string | null;
+  exposure_paths: string[];
+  backup_path: string | null;
+}
+
+export interface AdoptionPreview {
+  path: string;
+  fingerprint: string;
+  blocked_reason: string | null;
+}
+
+export const getAgentSkillStates = (agent: string) =>
+  invoke<AgentSkillState[]>("get_agent_skill_states", { agent });
+export const getAgentSkillDocument = (agent: string, skillPath: string) =>
+  invoke<ProjectSkillDocument>("get_agent_skill_document", { agent, skillPath });
+export const previewAgentSkillAdoption = (agent: string, skillRelativePath: string) =>
+  invoke<AdoptionPreview>("preview_agent_skill_adoption", { agent, skillRelativePath });
+export const adoptAgentSkill = (agent: string, skillRelativePath: string, fingerprint: string) =>
+  invoke<void>("adopt_agent_skill", { agent, skillRelativePath, fingerprint });
+export const setAgentSkillEnabled = (agent: string, skillId: string, enabled: boolean) =>
+  invoke<void>("set_agent_skill_enabled", { agent, skillId, enabled });
+
 export const getGlobalLocalSkillDocument = (agent: string, skillRelativePath: string) =>
   invoke<ProjectSkillDocument>("get_global_local_skill_document", { agent, skillRelativePath });
 

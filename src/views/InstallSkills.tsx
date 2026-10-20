@@ -947,7 +947,7 @@ export function InstallSkills() {
                                   />
                                 </div>
                               </div>
-                              <div ref={sourceListRef} className="max-h-48 overflow-y-auto scrollbar-hide py-1">
+                              <div ref={sourceListRef} className="app-scroll-region max-h-48 py-1">
                                 {filteredOverflowSources.map((source, idx) => (
                                   <button
                                     key={source}
@@ -1564,7 +1564,7 @@ export function InstallSkills() {
             {gitSelections.length === 0 ? (
               <p className="py-6 text-center text-[13px] text-muted">{t("install.gitPreview.empty")}</p>
             ) : (
-              <div className="max-h-64 space-y-2 overflow-y-auto scrollbar-hide pr-1">
+              <div tabIndex={0} className="app-scroll-region max-h-64 space-y-2 pr-1">
                 {gitSelections.map((item, idx) => (
                   <div
                     key={item.rel_path}

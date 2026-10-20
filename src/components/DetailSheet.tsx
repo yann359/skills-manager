@@ -1,6 +1,6 @@
 import { createPortal } from "react-dom";
 import { X } from "lucide-react";
-import { useEffect, useRef, type ReactNode } from "react";
+import { useEffect, useId, useRef, type ReactNode } from "react";
 
 import { IS_MACOS } from "../lib/platform";
 
@@ -22,6 +22,21 @@ export function DetailSheet({
   children,
 }: DetailSheetProps) {
   const sheetRef = useRef<HTMLDivElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const titleId = useId();
+
+  useEffect(() => {
+    if (!open) return;
+    const previousFocus = document.activeElement;
+    // Native PageUp/PageDown/arrow keys should scroll the opened document,
+    // rather than the page underneath it.
+    scrollRef.current?.focus({ preventScroll: true });
+    return () => {
+      if (previousFocus instanceof HTMLElement && previousFocus.isConnected) {
+        previousFocus.focus({ preventScroll: true });
+      }
+    };
+  }, [open]);
 
   useEffect(() => {
     if (!open) return;
@@ -59,8 +74,8 @@ export function DetailSheet({
         >
           <X className="h-4 w-4" />
         </button>
-        <div className="min-h-0 flex-1 overflow-y-auto px-6 pt-5 pb-6 scrollbar-hide">
-          <h2 className="mb-3 min-w-0 pr-10 text-[28px] font-semibold leading-tight tracking-tight text-primary">
+        <div ref={scrollRef} tabIndex={0} role="region" aria-labelledby={titleId} className="app-scroll-region flex-1 px-6 pt-5 pb-6">
+          <h2 id={titleId} className="mb-3 min-w-0 pr-10 text-[28px] font-semibold leading-tight tracking-tight text-primary">
             <span className="block">{title}</span>
           </h2>
           {description ? (

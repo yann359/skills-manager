@@ -419,7 +419,7 @@ export function Sidebar() {
         <div className="mx-3 mt-3.5 mb-2.5 border-t border-border-subtle" />
 
         {/* Scrollable section */}
-        <div className="px-2.5 flex-1 overflow-y-auto scrollbar-hide min-h-0">
+        <div tabIndex={0} className="app-scroll-region px-2.5 flex-1">
 
           {/* ── Presets ── */}
           <div className="mb-1.5 px-2.5 flex items-center gap-1">

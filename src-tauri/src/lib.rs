@@ -1134,6 +1134,11 @@ pub fn run() {
             commands::projects::slugify_skill_names,
             // Agent local workspace
             commands::agent_workspace::get_global_local_skills,
+            commands::agent_workspace::get_agent_skill_states,
+            commands::agent_workspace::get_agent_skill_document,
+            commands::agent_workspace::preview_agent_skill_adoption,
+            commands::agent_workspace::adopt_agent_skill,
+            commands::agent_workspace::set_agent_skill_enabled,
             commands::agent_workspace::get_global_local_skill_document,
             commands::agent_workspace::import_global_local_skill_to_center,
             commands::agent_workspace::update_global_local_skill_from_center,

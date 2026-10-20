@@ -649,7 +649,7 @@ pub fn default_tool_adapters() -> Vec<ToolAdapter> {
             override_skills_dir: None,
             category: ToolCategory::Coding,
             is_custom: false,
-            recursive_scan: false,
+            recursive_scan: true,
             project_relative_skills_dir: Some(".pi/skills".into()),
         },
         ToolAdapter {

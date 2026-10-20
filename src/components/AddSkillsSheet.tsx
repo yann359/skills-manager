@@ -671,7 +671,7 @@ function AddSkillsSheetBody({ onClose, target, managedSkills, onInstalled }: Pro
           )}
         </div>
 
-        <div className="min-h-0 flex-1 overflow-y-auto scrollbar-hide">
+        <div tabIndex={0} className="app-scroll-region flex-1">
           {ordered.length === 0 ? (
             <div className="px-5 py-12 text-center text-[13px] text-muted">
               {managedSkills.length === 0

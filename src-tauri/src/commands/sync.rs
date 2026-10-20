@@ -1,13 +1,10 @@
+#[cfg(test)]
 use std::path::PathBuf;
 use std::sync::Arc;
 use tauri::{AppHandle, State};
 
 use crate::core::{
-    error::AppError,
-    scenario_service,
-    skill_store::SkillStore,
-    sync_engine, sync_metadata, tool_adapters,
-    tool_service,
+    error::AppError, skill_store::SkillStore, sync_metadata, tool_adapters, tool_service,
 };
 use serde::Serialize;
 
@@ -37,42 +34,16 @@ fn sync_skill_to_tool_internal(
     skill_id: &str,
     tool: &str,
 ) -> Result<(), AppError> {
-    scenario_service::sync_single_skill_to_tool(
-        store,
-        skill_id,
-        tool,
-        scenario_service::DeployIntent::Managed,
-    )
+    crate::core::agent_skill_switch::set_enabled(store, skill_id, tool, true)
 }
-
-/// The disk-side half of turning a preset toggle off for one tool: the
-/// `skill_targets` record always goes, while whatever is at the recorded path
-/// is only removed when it still matches what we deployed (#435).
+/// The active preset uses the same verified, reversible deployment switch.
 fn unsync_skill_for_tool_in_preset(
     store: &SkillStore,
     skill_id: &str,
     tool: &str,
 ) -> Result<(), AppError> {
-    let targets = store
-        .get_targets_for_skill(skill_id)
-        .map_err(AppError::db)?;
-    if let Some(target) = targets.iter().find(|target| target.tool == tool) {
-        // Same survivor check as `unsync_skill_from_tool`: another tool
-        // sharing this skills directory keeps its deployment.
-        let still_referenced = targets
-            .iter()
-            .any(|other| other.tool != tool && other.target_path == target.target_path);
-        if still_referenced {
-            return store.delete_target(skill_id, tool).map_err(AppError::db);
-        }
-        sync_engine::remove_recorded_target_or_warn(
-            &PathBuf::from(&target.target_path),
-            &target.mode,
-        );
-    }
-    store.delete_target(skill_id, tool).map_err(AppError::db)
+    crate::core::agent_skill_switch::set_enabled(store, skill_id, tool, false)
 }
-
 #[tauri::command]
 pub async fn sync_skill_to_tool(
     app: AppHandle,
@@ -82,30 +53,7 @@ pub async fn sync_skill_to_tool(
 ) -> Result<(), AppError> {
     let store = store.inner().clone();
     let result = tauri::async_runtime::spawn_blocking(move || {
-        let outcome = (|| -> Result<(), AppError> {
-            sync_skill_to_tool_internal(&store, &skill_id, &tool)?;
-
-            if let Ok(Some(active_id)) = store.get_active_scenario_id() {
-                let skill_ids = store
-                    .get_skill_ids_for_scenario(&active_id)
-                    .map_err(AppError::db)?;
-                if skill_ids.contains(&skill_id) {
-                    let adapter_keys: Vec<String> =
-                        tool_adapters::enabled_installed_adapters(&store)
-                            .iter()
-                            .map(|a| a.key.clone())
-                            .collect();
-                    store
-                        .ensure_scenario_skill_tool_defaults(&active_id, &skill_id, &adapter_keys)
-                        .map_err(AppError::db)?;
-                    store
-                        .set_scenario_skill_tool_enabled(&active_id, &skill_id, &tool, true)
-                        .map_err(AppError::db)?;
-                }
-            }
-
-            Ok(())
-        })();
+        let outcome = sync_skill_to_tool_internal(&store, &skill_id, &tool);
         log_sync_outcome(&store, "enable", &skill_id, &tool, outcome.as_ref());
         outcome
     })
@@ -125,76 +73,7 @@ pub async fn unsync_skill_from_tool(
 ) -> Result<(), AppError> {
     let store = store.inner().clone();
     let result = tauri::async_runtime::spawn_blocking(move || {
-        let outcome = (|| -> Result<(), AppError> {
-            let targets = store
-                .get_targets_for_skill(&skill_id)
-                .map_err(AppError::db)?;
-
-            // Toggling a skill off is the GUI twin of `skills undeploy`, so it
-            // needs the same protection: the row says we deployed here, but if
-            // the user has since replaced our artifact with content of their
-            // own, that content is not ours to delete (#363).
-            if let Some(target) = targets.iter().find(|t| t.tool == tool) {
-                let target_path = PathBuf::from(&target.target_path);
-                // Several tools can resolve to one skills directory, so this
-                // exact path may still be deployed for another (skill, tool)
-                // that is staying. `apply_remove` has this survivor check;
-                // without it here, switching agent A off deletes agent B's
-                // live deployment.
-                let still_referenced = store
-                    .get_all_targets()
-                    .map_err(AppError::db)?
-                    .into_iter()
-                    .any(|other| {
-                        other.target_path == target.target_path
-                            && !(other.skill_id == skill_id && other.tool == tool)
-                    });
-                if still_referenced {
-                    log::debug!(
-                        "unsync: keeping {} (still referenced by another target)",
-                        target_path.display()
-                    );
-                } else {
-                    match sync_engine::remove_recorded_target(&target_path, &target.mode) {
-                        Ok(true) => {}
-                        Ok(false) => log::warn!(
-                            "unsync: preserving {} — no longer matches its recorded {} deployment; \
-                             removing the record only",
-                            target_path.display(),
-                            target.mode
-                        ),
-                        Err(e) => {
-                            log::warn!("unsync: failed to remove {}: {e}", target_path.display())
-                        }
-                    }
-                }
-            }
-
-            store
-                .delete_target(&skill_id, &tool)
-                .map_err(AppError::db)?;
-
-            if let Ok(Some(active_id)) = store.get_active_scenario_id() {
-                let skill_ids = store
-                    .get_skill_ids_for_scenario(&active_id)
-                    .map_err(AppError::db)?;
-                if skill_ids.contains(&skill_id) {
-                    let adapter_keys: Vec<String> =
-                        tool_adapters::enabled_installed_adapters(&store)
-                            .iter()
-                            .map(|a| a.key.clone())
-                            .collect();
-                    store
-                        .ensure_scenario_skill_tool_defaults(&active_id, &skill_id, &adapter_keys)
-                        .map_err(AppError::db)?;
-                    store
-                        .set_scenario_skill_tool_enabled(&active_id, &skill_id, &tool, false)
-                        .map_err(AppError::db)?;
-                }
-            }
-
-            Ok(())
-        })();
+        let outcome = crate::core::agent_skill_switch::set_enabled(&store, &skill_id, &tool, false);
         log_sync_outcome(&store, "disable", &skill_id, &tool, outcome.as_ref());
         outcome
     })
@@ -204,7 +83,6 @@ pub async fn unsync_skill_from_tool(
     }
     result
 }
-
 fn log_sync_outcome(
     store: &SkillStore,
     action: &str,
@@ -323,6 +201,13 @@ pub async fn set_skill_tool_toggle(
             }
         }
 
+        let previous_enabled = store
+            .get_scenario_skill_tool_toggles(&preset_id, &skill_id)
+            .map_err(AppError::db)?
+            .into_iter()
+            .find(|toggle| toggle.tool == tool)
+            .map(|toggle| toggle.enabled)
+            .unwrap_or(false);
         sync_metadata::with_repo_lock("set skill tool toggle", || {
             store.set_scenario_skill_tool_enabled(&preset_id, &skill_id, &tool, enabled)?;
             sync_metadata::write_all_from_db_unlocked(&store)
@@ -335,10 +220,23 @@ pub async fn set_skill_tool_toggle(
             .as_deref()
             == Some(preset_id.as_str());
         if is_active {
-            if enabled {
-                sync_skill_to_tool_internal(&store, &skill_id, &tool)?;
+            let deployment = if enabled {
+                sync_skill_to_tool_internal(&store, &skill_id, &tool)
             } else {
-                unsync_skill_for_tool_in_preset(&store, &skill_id, &tool)?;
+                unsync_skill_for_tool_in_preset(&store, &skill_id, &tool)
+            };
+            if let Err(error) = deployment {
+                // Failed deployment must not leave the preset checkbox flipped.
+                let _ = sync_metadata::with_repo_lock("rollback skill tool toggle", || {
+                    store.set_scenario_skill_tool_enabled(
+                        &preset_id,
+                        &skill_id,
+                        &tool,
+                        previous_enabled,
+                    )?;
+                    sync_metadata::write_all_from_db_unlocked(&store)
+                });
+                return Err(error);
             }
         }
 
@@ -354,6 +252,7 @@ pub async fn set_skill_tool_toggle(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::core::scenario_service;
     use crate::core::skill_store::SkillRecord;
     use crate::core::tool_adapters::CustomToolDef;
     use std::fs;
@@ -551,14 +450,14 @@ mod tests {
     }
 
     /// #435: unchecking a skill for one tool in the active preset used to
-    /// delete whatever sat at the recorded path. A real directory that
-    /// replaced our symlink is the user's — preserve it and drop only the
-    /// record.
+    /// delete whatever sat at the recorded path. A failed switch must preserve
+    /// both the user's replacement and its deployment record.
     #[test]
     fn preset_unsync_preserves_user_content_that_replaced_a_recorded_link() {
         let tmp = tempdir().unwrap();
         let store = SkillStore::new(&tmp.path().join("test.db")).unwrap();
         let target = tmp.path().join("agent-skills").join("my-skill");
+        configure_single_custom_tool(&store, target.parent().unwrap());
         fs::create_dir_all(&target).unwrap();
         fs::write(target.join("mine.txt"), "DO_NOT_OVERWRITE").unwrap();
         store
@@ -568,7 +467,7 @@ mod tests {
             .insert_target(&crate::core::skill_store::SkillTargetRecord {
                 id: "t1".to_string(),
                 skill_id: "s1".to_string(),
-                tool: "agent_a".to_string(),
+                tool: "test_agent".to_string(),
                 target_path: target.to_string_lossy().to_string(),
                 mode: "symlink".to_string(),
                 status: "ok".to_string(),
@@ -578,14 +477,14 @@ mod tests {
             })
             .unwrap();
 
-        unsync_skill_for_tool_in_preset(&store, "s1", "agent_a").unwrap();
+        assert!(unsync_skill_for_tool_in_preset(&store, "s1", "test_agent").is_err());
 
         assert_eq!(
             fs::read_to_string(target.join("mine.txt")).unwrap(),
             "DO_NOT_OVERWRITE",
             "the user's directory must survive the uncheck"
         );
-        assert!(store.get_targets_for_skill("s1").unwrap().is_empty());
+        assert_eq!(store.get_targets_for_skill("s1").unwrap().len(), 1);
     }
 
     /// Unchecking one tool must not delete a deployment another tool shares.
@@ -594,6 +493,7 @@ mod tests {
         let tmp = tempdir().unwrap();
         let store = SkillStore::new(&tmp.path().join("test.db")).unwrap();
         let target = tmp.path().join("agent-skills").join("my-skill");
+        configure_two_custom_tools_sharing_a_dir(&store, target.parent().unwrap());
         fs::create_dir_all(&target).unwrap();
         fs::write(target.join("SKILL.md"), "---\nname: my-skill\n---\n").unwrap();
         store
@@ -615,12 +515,15 @@ mod tests {
                 .unwrap();
         }
 
-        unsync_skill_for_tool_in_preset(&store, "s1", "agent_a").unwrap();
+        assert!(unsync_skill_for_tool_in_preset(&store, "s1", "agent_a").is_err());
 
         assert!(target.exists(), "agent_b still deploys this path");
         let remaining = store.get_targets_for_skill("s1").unwrap();
-        assert_eq!(remaining.len(), 1);
-        assert_eq!(remaining[0].tool, "agent_b");
+        assert_eq!(
+            remaining.len(),
+            2,
+            "a refused independent switch preserves both records"
+        );
     }
 
     #[test]

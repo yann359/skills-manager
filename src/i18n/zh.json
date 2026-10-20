@@ -1,4 +1,15 @@
 {
+  "agentSwitch": {
+    "backup": "安全备份",
+    "all": "全部状态", "enabled": "已启用", "disabled": "已禁用", "unmanaged": "未受管理", "filter": "筛选启用状态",
+    "enable": "启用技能", "disable": "禁用技能", "limited": "受限", "exposed": "部署已撤销 · 仍有其他来源",
+    "adopt": "接管管理", "adoptTitle": "安全接管本地 Skill", "adopted": "已备份并接管，原目录保持不变，现在可使用开关。",
+    "adoptMessage": "将完整备份下面的目录并校验，复制到中心库后登记管理关系；本次接管不会修改原目录或 SKILL.md。以后禁用会将此部署移到搜索路径外的恢复区，启用会恢复原路径。",
+    "enabledToast": "已部署并通过磁盘校验，请重新加载 Agent 的 Skills。", "disabledToast": "已撤销此 Agent 的部署并保留恢复文件，请重新加载 Skills。",
+    "verifyFailed": "操作后的磁盘状态未通过验证，请重新扫描查看实际情况。",
+    "reloadHint": "此开关控制实际部署，与 Preset 归属独立。Codex 请新建会话或重新加载；Claude Code 在支持时运行 /reload-skills，或新建会话；Pi 可运行 /reload。已加载到任务上下文中的内容不会被清除。",
+    "scopeHint": "状态依据已知的全局路径与已登记项目。外部插件、未登记项目、启动参数和额外配置可能仍暴露同名技能，不能保证在所有会话中完全禁用。"
+  },
   "app": {
     "name": "Skills Manager"
   },

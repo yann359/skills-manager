@@ -1,4 +1,5 @@
 pub mod ai_translation;
+pub mod agent_skill_switch;
 pub mod app_state;
 pub mod audit_log;
 pub mod auto_backup;

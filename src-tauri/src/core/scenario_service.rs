@@ -86,6 +86,11 @@ pub fn collect_scenario_sync_targets(
         let target_name = sync_engine::target_dir_name(&source, &skill.name);
         let adapters = enabled_installed_adapters_for_scenario_skill(store, scenario_id, &skill.id)?;
         for adapter in &adapters {
+            // A live Agent switch is independent from membership in a preset.
+            // Startup reconciliation must not silently re-enable it.
+            if super::agent_skill_switch::explicitly_disabled(store, &skill.id, &adapter.key)? {
+                continue;
+            }
             let target = deployment_target(adapter, &target_name, &skill.id, &existing_targets);
             let mode = sync_engine::sync_mode_for_tool(&adapter.key, configured_mode.as_deref());
             targets.push(ScenarioSyncTarget {
@@ -274,6 +279,9 @@ pub fn sync_desired_targets(
     let mut refusals: Vec<TargetConflict> = Vec::new();
 
     for desired in desired_targets {
+        if super::agent_skill_switch::explicitly_disabled(store, &desired.skill_id, &desired.tool)? {
+            continue;
+        }
         let target_start = Instant::now();
         let key = (desired.skill_id.clone(), desired.tool.clone());
         // A row claiming exactly this path is what lets us replace a copy-mode
@@ -383,6 +391,8 @@ pub fn sync_desired_targets(
                         "Failed to insert sync target for skill {}: {e}",
                         desired.skill_id
                     );
+                } else if let Err(e) = super::agent_skill_switch::note_engine_deployment(store, &target_record, &desired.source) {
+                    log::warn!("Failed to refresh Agent switch baseline: {e}");
                 }
                 synced_count += 1;
                 let elapsed = target_start.elapsed().as_millis();
@@ -607,6 +617,9 @@ pub fn sync_skill_to_active_scenario(
             let target_name = sync_engine::target_dir_name(&source, &skill.name);
             let old_targets = store.get_targets_for_skill(skill_id).unwrap_or_default();
             for adapter in &adapters {
+                if super::agent_skill_switch::explicitly_disabled(store, skill_id, &adapter.key)? {
+                    continue;
+                }
                 let target = deployment_target(adapter, &target_name, skill_id, &old_targets);
                 let mut recorded_mode: Option<String> = None;
                 if let Some(old) = old_targets.iter().find(|t| t.tool == adapter.key) {
@@ -653,6 +666,8 @@ pub fn sync_skill_to_active_scenario(
                         };
                         if let Err(e) = store.insert_target(&target_record) {
                             log::warn!("Failed to insert sync target for skill {skill_id}: {e}");
+                        } else if let Err(e) = super::agent_skill_switch::note_engine_deployment(store, &target_record, &source) {
+                            log::warn!("Failed to refresh Agent switch baseline: {e}");
                         }
                     }
                     Err(e) => {
@@ -934,6 +949,7 @@ pub fn sync_single_skill_to_tool(
     };
 
     store.insert_target(&target_record).map_err(AppError::db)?;
+    super::agent_skill_switch::note_engine_deployment(store, &target_record, &source)?;
     Ok(())
 }
 
@@ -1222,6 +1238,9 @@ fn apply_add(
                     );
                     failed += 1;
                 } else {
+                    if let Err(e) = super::agent_skill_switch::note_engine_deployment(store, &target_record, source) {
+                        log::warn!("Failed to refresh Agent switch baseline: {e}");
+                    }
                     synced += 1;
                 }
             }

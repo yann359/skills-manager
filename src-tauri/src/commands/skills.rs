@@ -2002,6 +2002,7 @@ fn managed_skill_to_dto(
     let targets = all_targets
         .iter()
         .filter(|target| target.skill_id == skill.id)
+        .filter(|target| skill_metadata::is_valid_skill_dir(Path::new(&target.target_path)))
         .map(|target| TargetDto {
             id: target.id.clone(),
             skill_id: target.skill_id.clone(),

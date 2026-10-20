@@ -505,10 +505,10 @@ export function MySkills() {
       const displayName = getToolDisplayName(toolKey, tools);
       try {
         if (enabled) {
-          await api.syncSkillToTool(skill.id, toolKey);
+          await api.setAgentSkillEnabled(toolKey, skill.id, true);
           toast.success(t("mySkills.targetInstalled", { name: skill.name, agent: displayName }));
         } else {
-          await api.unsyncSkillFromTool(skill.id, toolKey);
+          await api.setAgentSkillEnabled(toolKey, skill.id, false);
           toast.success(t("mySkills.targetUninstalled", { name: skill.name, agent: displayName }));
         }
         await refreshManagedSkills();

@@ -13,6 +13,46 @@ use crate::core::{
     tool_adapters, tool_service,
 };
 
+#[tauri::command]
+pub async fn get_agent_skill_states(store: State<'_, Arc<SkillStore>>, agent: String) -> Result<Vec<crate::core::agent_skill_switch::AgentSkillState>, AppError> {
+    let store = store.inner().clone();
+    tauri::async_runtime::spawn_blocking(move || crate::core::agent_skill_switch::list(&store, &agent)).await?
+}
+
+#[tauri::command]
+pub async fn get_agent_skill_document(store: State<'_, Arc<SkillStore>>, agent: String, skill_path: String) -> Result<ProjectSkillDocumentDto, AppError> {
+    let store = store.inner().clone();
+    tauri::async_runtime::spawn_blocking(move || {
+        // Resolve the requested document through the scanned inventory, never
+        // accept an arbitrary caller-supplied filesystem path.
+        let states = crate::core::agent_skill_switch::list(&store, &agent)?;
+        let state = states.iter().find(|s| s.skill.path == skill_path && s.skill.enabled)
+            .ok_or_else(|| AppError::not_found("此路径不在 Agent 当前技能列表中。"))?;
+        let path = PathBuf::from(&state.skill.path).join("SKILL.md");
+        Ok(ProjectSkillDocumentDto { skill_name: state.skill.name.clone(), filename: "SKILL.md".into(), content: std::fs::read_to_string(path)? })
+    }).await?
+}
+
+#[tauri::command]
+pub async fn preview_agent_skill_adoption(store: State<'_, Arc<SkillStore>>, agent: String, skill_relative_path: String) -> Result<crate::core::agent_skill_switch::AdoptionPreview, AppError> {
+    let store = store.inner().clone();
+    tauri::async_runtime::spawn_blocking(move || crate::core::agent_skill_switch::preview(&store, &agent, &skill_relative_path)).await?
+}
+
+#[tauri::command]
+pub async fn adopt_agent_skill(store: State<'_, Arc<SkillStore>>, agent: String, skill_relative_path: String, fingerprint: String) -> Result<(), AppError> {
+    let store = store.inner().clone();
+    tauri::async_runtime::spawn_blocking(move || crate::core::agent_skill_switch::adopt(&store, &agent, &skill_relative_path, &fingerprint)).await?
+}
+
+#[tauri::command]
+pub async fn set_agent_skill_enabled(app: tauri::AppHandle, store: State<'_, Arc<SkillStore>>, agent: String, skill_id: String, enabled: bool) -> Result<(), AppError> {
+    let store = store.inner().clone();
+    let result = tauri::async_runtime::spawn_blocking(move || crate::core::agent_skill_switch::set_enabled(&store, &skill_id, &agent, enabled)).await?;
+    if result.is_ok() { crate::schedule_tray_refresh(&app); }
+    result
+}
+
 fn target_path_equals_skill(target_path: &str, skill_path: &str) -> bool {
     if target_path == skill_path {
         return true;

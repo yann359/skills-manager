@@ -41,9 +41,9 @@ export function Layout() {
         className="absolute inset-x-0 top-0 z-50 h-[28px] border-b border-border-subtle bg-bg-secondary"
       />
       <Sidebar />
-      <div className="relative flex min-w-[600px] flex-1 flex-col overflow-hidden">
-        <div className="flex-1 overflow-y-auto px-5 pb-5 pt-[calc(28px+20px)] scrollbar-hide">
-          <div className="mx-auto flex min-h-full max-w-[1200px] flex-col gap-4">
+      <div className="relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+        <main tabIndex={0} className="app-scroll-region mt-[28px] flex-1 px-5 pb-5 pt-5">
+          <div className="mx-auto flex min-h-full min-w-0 max-w-[1200px] flex-col gap-4">
             {appError ? (
               <StatusBanner
                 compact
@@ -56,7 +56,7 @@ export function Layout() {
             ) : null}
             <Outlet />
           </div>
-        </div>
+        </main>
       </div>
       <CommandPalette />
     </div>

@@ -32,6 +32,7 @@ import { ChineseSummaryToggle, SkillSummary } from "../components/SkillSummary";
 import { DocumentDiffViewer } from "../components/DocumentDiffViewer";
 import * as api from "../lib/tauri";
 import type { ManagedSkill, ProjectSkill } from "../lib/tauri";
+import type { AgentSkillState, AdoptionPreview } from "../lib/tauri";
 import { getErrorMessage } from "../lib/error";
 import { getTagActiveColor, getTagColor, pruneStaleTagFilters, UNTAGGED_FILTER } from "../lib/skillTags";
 import { AddSkillsSheet } from "../components/AddSkillsSheet";
@@ -58,6 +59,7 @@ function WorkspaceSkillCard({
   fileCount = 0,
   active = false,
   actions,
+  enabledSwitch,
   actionsHover = false,
   selectable = false,
   selected = false,
@@ -71,6 +73,7 @@ function WorkspaceSkillCard({
   fileCount?: number;
   active?: boolean;
   actions?: ReactNode;
+  enabledSwitch?: ReactNode;
   actionsHover?: boolean;
   /** Multi-select mode: the leading slot becomes a checkbox and clicks select. */
   selectable?: boolean;
@@ -138,6 +141,7 @@ function WorkspaceSkillCard({
             </span>
           )}
         </div>
+        {enabledSwitch}
         {actions && (
           <div
             className={cn(
@@ -201,7 +205,7 @@ function WorkspaceSkillCard({
         <span className={cn("rounded-full px-2 py-0.5 text-[12px] font-medium", status.className)}>
           {status.label}
         </span>
-        {actions && <div className="flex shrink-0 items-center gap-1.5">{actions}</div>}
+        <div className="flex shrink-0 items-center gap-1.5">{enabledSwitch}{actions}</div>
       </div>
     </div>
   );
@@ -248,18 +252,21 @@ export function WorkspaceView({ config }: { config: WorkspaceConfig }) {
   const [tagFilters, setTagFilters] = useState<Set<string>>(new Set());
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [removingLocalSkillId, setRemovingLocalSkillId] = useState<string | null>(null);
-  const [localSkills, setLocalSkills] = useState<ProjectSkill[]>([]);
+  const [localSkills, setLocalSkills] = useState<AgentSkillState[]>([]);
+  const [enableFilter, setEnableFilter] = useState("all");
+  const [switchPending, setSwitchPending] = useState<string | null>(null);
+  const [adoption, setAdoption] = useState<{ skill: AgentSkillState; preview: AdoptionPreview } | null>(null);
   const [localSkillsLoading, setLocalSkillsLoading] = useState(false);
   const [localActionKey, setLocalActionKey] = useState<string | null>(null);
-  const [localDetailSkill, setLocalDetailSkill] = useState<ProjectSkill | null>(null);
+  const [localDetailSkill, setLocalDetailSkill] = useState<AgentSkillState | null>(null);
   const [localDocContent, setLocalDocContent] = useState<string | null>(null);
   const [localCenterDocContent, setLocalCenterDocContent] = useState<string | null>(null);
   const [localDocLoading, setLocalDocLoading] = useState(false);
   const [localCenterDocLoading, setLocalCenterDocLoading] = useState(false);
   const [localContentTab, setLocalContentTab] = useState<"local" | "diff" | "center">("local");
-  const [uploadConfirmSkill, setUploadConfirmSkill] = useState<ProjectSkill | null>(null);
-  const [pullConfirmSkill, setPullConfirmSkill] = useState<ProjectSkill | null>(null);
-  const [deleteLocalConfirmSkill, setDeleteLocalConfirmSkill] = useState<ProjectSkill | null>(null);
+  const [uploadConfirmSkill, setUploadConfirmSkill] = useState<AgentSkillState | null>(null);
+  const [pullConfirmSkill, setPullConfirmSkill] = useState<AgentSkillState | null>(null);
+  const [deleteLocalConfirmSkill, setDeleteLocalConfirmSkill] = useState<AgentSkillState | null>(null);
   const [batchUnsyncConfirm, setBatchUnsyncConfirm] = useState(false);
   const [batchDeleteConfirm, setBatchDeleteConfirm] = useState(false);
   const [batchRunning, setBatchRunning] = useState(false);
@@ -330,7 +337,7 @@ export function WorkspaceView({ config }: { config: WorkspaceConfig }) {
     }
     setLocalSkillsLoading(true);
     try {
-      const skills = await api.getGlobalLocalSkills(currentToolKey);
+      const skills = await api.getAgentSkillStates(currentToolKey);
       if (localSkillsRequestRef.current === requestId) setLocalSkills(skills);
     } catch (error: unknown) {
       if (localSkillsRequestRef.current === requestId) {
@@ -358,6 +365,12 @@ export function WorkspaceView({ config }: { config: WorkspaceConfig }) {
     };
   }, [currentToolKey, loadLocalSkills]);
 
+  // AppContext refreshes on external filesystem events. Re-scan this page as
+  // well, including target-only changes that don't change the library count.
+  useEffect(() => {
+    if (currentToolKey) void loadLocalSkills();
+  }, [managedSkills, currentToolKey, loadLocalSkills]);
+
   // Load real on-disk skill counts for every installed agent while the overview
   // is shown (#287). Scoped to the overview (currentToolKey === null); the
   // detail view derives its own count from `localSkills`.
@@ -372,8 +385,8 @@ export function WorkspaceView({ config }: { config: WorkspaceConfig }) {
       const entries = await Promise.all(
         installedTools.map(async (tool) => {
           try {
-            const skills = await api.getGlobalLocalSkills(tool.key);
-            return [tool.key, skills.length] as const;
+            const skills = await api.getAgentSkillStates(tool.key);
+            return [tool.key, skills.filter((skill) => skill.enabled).length] as const;
           } catch {
             // Keep the managed-count fallback for an agent that fails to scan.
             return [tool.key, null] as const;
@@ -404,6 +417,8 @@ export function WorkspaceView({ config }: { config: WorkspaceConfig }) {
     setUploadConfirmSkill(null);
     setPullConfirmSkill(null);
     setDeleteLocalConfirmSkill(null);
+    setAdoption(null);
+    setEnableFilter("all");
     setTagFilters(new Set());
   }, [currentTool?.key]);
 
@@ -441,6 +456,9 @@ export function WorkspaceView({ config }: { config: WorkspaceConfig }) {
     const q = search.trim().toLowerCase();
     return localSkills
       .filter((skill) => {
+        if (enableFilter === "enabled" && !skill.enabled) return false;
+        if (enableFilter === "disabled" && (skill.enabled || skill.exposure_paths.length > 0)) return false;
+        if (enableFilter === "unmanaged" && skill.managed) return false;
         if (q) {
           const matchesQuery =
             skill.name.toLowerCase().includes(q) ||
@@ -469,10 +487,10 @@ export function WorkspaceView({ config }: { config: WorkspaceConfig }) {
           a.name.localeCompare(b.name)
         );
       });
-  }, [localSkills, search, tagFilters]);
+  }, [localSkills, search, tagFilters, enableFilter]);
 
   const inSyncLocalCount = useMemo(
-    () => localSkills.filter((skill) => skill.sync_status === "in_sync").length,
+    () => localSkills.filter((skill) => skill.enabled && skill.sync_status === "in_sync").length,
     [localSkills]
   );
 
@@ -489,8 +507,8 @@ export function WorkspaceView({ config }: { config: WorkspaceConfig }) {
   );
 
   const managedLocalCount = useMemo(
-    () => localSkills.filter((skill) => !!skill.center_skill_id && managedLocalIds.has(skill.center_skill_id)).length,
-    [localSkills, managedLocalIds]
+    () => localSkills.filter((skill) => skill.managed).length,
+    [localSkills]
   );
 
   const localSkillKey = (skill: ProjectSkill) => `${skill.agent}:${skill.relative_path}`;
@@ -507,7 +525,7 @@ export function WorkspaceView({ config }: { config: WorkspaceConfig }) {
     filtered: visibleLocalSkills,
     getKey: localSkillKey,
     isItemActive: () => true,
-    filterSignal: JSON.stringify([search, [...tagFilters].sort()]),
+    filterSignal: JSON.stringify([search, enableFilter, [...tagFilters].sort()]),
     scopeSignal: agentKey ?? "",
     escapeEnabled: !batchUnsyncConfirm && !batchDeleteConfirm,
   });
@@ -521,17 +539,17 @@ export function WorkspaceView({ config }: { config: WorkspaceConfig }) {
     () => visibleLocalSkills.filter((skill) =>
       selectedIds.has(localSkillKey(skill))
       && !!skill.center_skill_id
-      && managedLocalIds.has(skill.center_skill_id)
+      && skill.enabled && !skill.blocked_reason && skill.managed
     ),
-    [visibleLocalSkills, selectedIds, managedLocalIds]
+    [visibleLocalSkills, selectedIds]
   );
   const selectedDeletable = useMemo(
     () => visibleLocalSkills.filter((skill) =>
       selectedIds.has(localSkillKey(skill))
-      && !(skill.center_skill_id && managedLocalIds.has(skill.center_skill_id))
+      && !skill.managed && !skill.blocked_reason
       && skill.sync_status === "project_only"
     ),
-    [visibleLocalSkills, selectedIds, managedLocalIds]
+    [visibleLocalSkills, selectedIds]
   );
 
   const handleBatchUnsync = async () => {
@@ -543,7 +561,7 @@ export function WorkspaceView({ config }: { config: WorkspaceConfig }) {
       for (const skill of selectedUnsyncable) {
         if (!skill.center_skill_id) continue;
         try {
-          await api.unsyncSkillFromTool(skill.center_skill_id, agentKey);
+          await api.setAgentSkillEnabled(agentKey, skill.center_skill_id, false);
           removed++;
         } catch {
           failed++;
@@ -587,7 +605,7 @@ export function WorkspaceView({ config }: { config: WorkspaceConfig }) {
     if (!agentKey || !skill.center_skill_id || !managedLocalIds.has(skill.center_skill_id)) return;
     setRemovingLocalSkillId(skill.relative_path);
     try {
-      await api.unsyncSkillFromTool(skill.center_skill_id, agentKey);
+      await api.setAgentSkillEnabled(agentKey, skill.center_skill_id, false);
       await Promise.all([refreshManagedSkills(), refreshTools(), loadLocalSkills()]);
       toast.success(t("globalWorkspace.removedToast", { name: skill.name }));
     } catch (e) {
@@ -602,7 +620,7 @@ export function WorkspaceView({ config }: { config: WorkspaceConfig }) {
   }, [loadLocalSkills, refreshManagedSkills, refreshTools]);
 
   const handleUploadLocalSkill = useCallback(
-    async (skill: ProjectSkill) => {
+    async (skill: AgentSkillState) => {
       if (!currentTool) return;
       const key = `upload:${skill.relative_path}`;
       setLocalActionKey(key);
@@ -659,19 +677,19 @@ export function WorkspaceView({ config }: { config: WorkspaceConfig }) {
   );
 
   const openLocalDetail = useCallback(
-    async (skill: ProjectSkill) => {
+    async (skill: AgentSkillState) => {
       if (!currentTool) return;
       const requestId = localDetailRequestRef.current + 1;
       localDetailRequestRef.current = requestId;
       setLocalDetailSkill(skill);
-      setLocalContentTab("local");
+      setLocalContentTab(skill.enabled ? "local" : "center");
       setLocalDocContent(null);
       setLocalCenterDocContent(null);
       setLocalDocLoading(true);
       setLocalCenterDocLoading(!!skill.center_skill_id);
 
       api
-        .getGlobalLocalSkillDocument(currentTool.key, skill.relative_path)
+        .getAgentSkillDocument(currentTool.key, skill.path)
         .then((doc) => {
           if (localDetailRequestRef.current === requestId) setLocalDocContent(doc.content);
         })
@@ -717,7 +735,7 @@ export function WorkspaceView({ config }: { config: WorkspaceConfig }) {
     await Promise.all([refreshManagedSkills(), refreshTools(), loadLocalSkills()]);
   }, [loadLocalSkills, refreshManagedSkills, refreshTools]);
 
-  const renderLocalSkillActions = (skill: ProjectSkill, variant: "grid" | "list") => {
+  const renderLocalSkillActions = (skill: AgentSkillState, variant: "grid" | "list") => {
     const uploadKey = `upload:${skill.relative_path}`;
     const pullKey = `pull:${skill.relative_path}`;
     const deleteKey = `delete:${skill.relative_path}`;
@@ -810,6 +828,68 @@ export function WorkspaceView({ config }: { config: WorkspaceConfig }) {
       </>
     );
   };
+
+  const handleAgentSwitch = async (skill: AgentSkillState) => {
+    if (!currentToolKey || !skill.center_skill_id || switchPending) return;
+    const key = localSkillKey(skill);
+    setSwitchPending(key);
+    try {
+      await api.setAgentSkillEnabled(currentToolKey, skill.center_skill_id, !skill.enabled);
+      // Never optimistically flip: show only the result read back from disk.
+      const states = await api.getAgentSkillStates(currentToolKey);
+      const actual = states.find((s) => s.center_skill_id === skill.center_skill_id);
+      if (!actual || actual.enabled === skill.enabled) throw new Error(t("agentSwitch.verifyFailed"));
+      setLocalSkills(states);
+      toast.success(t(skill.enabled ? "agentSwitch.disabledToast" : "agentSwitch.enabledToast"));
+      await refreshManagedSkills();
+    } catch (error) {
+      toast.error(getErrorMessage(error, t("common.error")));
+      await loadLocalSkills();
+    } finally { setSwitchPending(null); }
+  };
+
+  const prepareAdoption = async (skill: AgentSkillState) => {
+    if (!currentToolKey || switchPending) return;
+    setSwitchPending(localSkillKey(skill));
+    try {
+      const preview = await api.previewAgentSkillAdoption(currentToolKey, skill.relative_path);
+      if (preview.blocked_reason) throw new Error(preview.blocked_reason);
+      setAdoption({ skill, preview });
+    } catch (error) { toast.error(getErrorMessage(error, t("common.error"))); }
+    finally { setSwitchPending(null); }
+  };
+
+  const confirmAdoption = async () => {
+    if (!adoption || !currentToolKey) return;
+    try {
+      await api.adoptAgentSkill(currentToolKey, adoption.skill.relative_path, adoption.preview.fingerprint);
+      await Promise.all([loadLocalSkills(), refreshManagedSkills()]);
+      toast.success(t("agentSwitch.adopted"));
+    } catch (error) { toast.error(getErrorMessage(error, t("common.error"))); }
+  };
+
+  const renderAgentSwitch = (skill: AgentSkillState) => (
+    <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+      {skill.blocked_reason && <span className="text-[11px] text-amber-600" title={[skill.blocked_reason, ...skill.exposure_paths].join("\n")}>{t("agentSwitch.limited")}</span>}
+      {skill.managed ? (
+        <button type="button" role="switch" aria-checked={skill.enabled}
+          aria-label={`${skill.name} · ${t(skill.enabled ? "agentSwitch.disable" : "agentSwitch.enable")}`}
+          title={skill.blocked_reason ?? t("agentSwitch.reloadHint")}
+          disabled={!!switchPending || !!skill.blocked_reason}
+          onClick={() => void handleAgentSwitch(skill)}
+          className={cn("relative inline-flex h-6 w-10 shrink-0 items-center rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent disabled:opacity-50", skill.enabled ? "bg-emerald-500" : "bg-surface-active")}
+        >
+          <span className={cn("flex h-5 w-5 items-center justify-center rounded-full bg-white shadow-sm transition-transform", skill.enabled ? "translate-x-[18px]" : "translate-x-[2px]")}>
+            {switchPending === localSkillKey(skill) && <Loader2 className="h-3 w-3 animate-spin text-muted" />}
+          </span>
+        </button>
+      ) : (
+        <button type="button" disabled={!!switchPending || !!skill.blocked_reason} title={skill.blocked_reason ?? skill.path}
+          className="rounded-lg px-2 py-1 text-[12px] text-accent hover:bg-surface-hover disabled:opacity-50"
+          onClick={() => void prepareAdoption(skill)}>{t("agentSwitch.adopt")}</button>
+      )}
+    </div>
+  );
 
   if (redirectTarget) {
     return <Navigate to={redirectTarget} replace />;
@@ -913,6 +993,10 @@ export function WorkspaceView({ config }: { config: WorkspaceConfig }) {
 
           <div className="flex min-w-0 flex-[2_1_520px] flex-wrap items-center justify-end gap-2">
             <ChineseSummaryToggle />
+            <select value={enableFilter} onChange={(e) => setEnableFilter(e.target.value)} aria-label={t("agentSwitch.filter")}
+              className="app-input text-[13px]">
+              {["all", "enabled", "disabled", "unmanaged"].map((value) => <option key={value} value={value}>{t(`agentSwitch.${value}`)}</option>)}
+            </select>
             <div className="relative w-full min-w-[220px] max-w-[320px]">
               <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted" />
               <input
@@ -1059,6 +1143,7 @@ export function WorkspaceView({ config }: { config: WorkspaceConfig }) {
         )}
       </div>
 
+      <p className="mb-3 text-[12px] leading-relaxed text-muted">{t("agentSwitch.reloadHint")} {t("agentSwitch.scopeHint")}</p>
       {localSkillsLoading ? (
         <div className="flex items-center gap-2 py-4 text-[13px] text-muted">
           <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -1130,8 +1215,7 @@ export function WorkspaceView({ config }: { config: WorkspaceConfig }) {
           )}
         >
           {visibleLocalSkills.map((skill) => {
-            const statusMeta = getLocalStatusMeta(t, skill.sync_status);
-            const isManaged = !!skill.center_skill_id && managedLocalIds.has(skill.center_skill_id);
+            const statusMeta = { label: t(!skill.managed ? "agentSwitch.unmanaged" : skill.enabled ? "agentSwitch.enabled" : skill.exposure_paths.length ? "agentSwitch.exposed" : "agentSwitch.disabled"), className: skill.enabled ? "bg-emerald-500/10 text-emerald-600" : "bg-surface-hover text-muted" };
             const key = localSkillKey(skill);
 
             return (
@@ -1143,8 +1227,9 @@ export function WorkspaceView({ config }: { config: WorkspaceConfig }) {
                 tags={skill.tags.map((tag) => ({ label: tag, className: getTagColor(tag, allLocalTags) }))}
                 status={statusMeta}
                 fileCount={skill.files.length}
-                active={isManaged}
-                actions={isMultiSelect ? undefined : renderLocalSkillActions(skill, viewMode)}
+                active={skill.enabled}
+                enabledSwitch={isMultiSelect ? undefined : renderAgentSwitch(skill)}
+                actions={isMultiSelect || !skill.enabled || !skill.managed ? undefined : renderLocalSkillActions(skill, viewMode)}
                 actionsHover={viewMode === "list"}
                 selectable={isMultiSelect}
                 selected={selectedIds.has(key)}
@@ -1182,8 +1267,10 @@ export function WorkspaceView({ config }: { config: WorkspaceConfig }) {
                 {getLocalStatusMeta(t, localDetailSkill.sync_status).label}
               </span>
               <span className="rounded-full bg-surface-hover px-2.5 py-1 text-[12px] text-muted">
-                {localDetailSkill.relative_path}
+                {localDetailSkill.path}
               </span>
+              {localDetailSkill.backup_path && <span className="break-all text-[12px] text-muted">{t("agentSwitch.backup")}: {localDetailSkill.backup_path}</span>}
+              {localDetailSkill.blocked_reason && <span className="text-[12px] text-amber-600">{localDetailSkill.blocked_reason}</span>}
             </div>
           ) : null
         }
@@ -1239,6 +1326,17 @@ export function WorkspaceView({ config }: { config: WorkspaceConfig }) {
         )}
       </DetailSheet>
 
+      <ConfirmDialog
+        open={!!adoption}
+        title={t("agentSwitch.adoptTitle")}
+        message={t("agentSwitch.adoptMessage")}
+        details={adoption ? [adoption.preview.path] : []}
+        confirmLabel={t("agentSwitch.adopt")}
+        tone="warning"
+        lockWhileRunning
+        onClose={() => setAdoption(null)}
+        onConfirm={confirmAdoption}
+      />
       <ConfirmDialog
         open={!!uploadConfirmSkill}
         title={t("globalWorkspace.localSkills.uploadConfirmTitle")}
