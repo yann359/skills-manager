@@ -62,7 +62,7 @@ const DARK_INVERT_ICON_KEYS = new Set<string>(["codex", "roo_code"]);
 
 export function getAgentIconSrc(agentKey: string): string | null {
   const file = AGENT_ICON_FILES[agentKey];
-  return file ? `/agent-icons/${file}` : null;
+  return file ? `${import.meta.env.BASE_URL}agent-icons/${file}` : null;
 }
 
 export function agentIconNeedsDarkInvert(agentKey: string): boolean {

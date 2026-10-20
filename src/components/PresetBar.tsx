@@ -120,7 +120,7 @@ export function PresetBar({
   const busy = loadingKey !== null;
 
   return (
-    <div className="flex min-w-0 flex-wrap items-center gap-1.5">
+    <div className="preset-strip flex min-w-0 flex-wrap items-center gap-2">
       <span className="shrink-0 text-[12px] text-muted">{t("sidebar.presets")}</span>
       <div className="flex min-w-0 flex-1 flex-wrap items-center gap-1.5">
         {visiblePresets.map((preset) => {
@@ -140,7 +140,7 @@ export function PresetBar({
               disabled={busy}
               title={preset.description ? `${preset.name} — ${preset.description}` : preset.name}
               className={cn(
-                "inline-flex shrink-0 items-center gap-1 rounded-full border px-2.5 py-0.5 text-[12px] font-medium transition-colors disabled:opacity-50",
+                "inline-flex shrink-0 items-center gap-1 rounded-md border px-2.5 py-1 text-[12px] font-medium transition-colors disabled:opacity-50",
                 s.status === "active"
                   ? `${presetIcon.activeClass} ${presetIcon.colorClass}`
                   : s.status === "partial"

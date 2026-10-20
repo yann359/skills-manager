@@ -11,6 +11,7 @@ export default {
         background: 'var(--color-bg)',
         'bg-secondary': 'var(--color-bg-secondary)',
         surface: 'var(--color-surface)',
+        'control-off': 'var(--color-control-off)',
         'surface-hover': 'var(--color-surface-hover)',
         'surface-active': 'var(--color-surface-active)',
         border: 'var(--color-border)',

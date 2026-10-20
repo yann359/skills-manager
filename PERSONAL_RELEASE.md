@@ -2,9 +2,11 @@
 
 本仓库基于 [xingkongliang/skills-manager](https://github.com/xingkongliang/skills-manager)。原作者为 Tianliang Zhang，原项目 MIT LICENSE 与署名完整保留。
 
-个人版本：`1.41.1-yann.1`。Windows MSI 的数字产品版本为 `1.41.1001`，应用内部仍显示完整个人版本号。应用标识、用户配置位置、Skill 原文和系统安全凭据条目保持兼容。
+个人版本：`1.41.1-yann.2`。Windows MSI 的数字产品版本为 `1.41.1002`，应用内部仍显示完整个人版本号。应用标识、用户配置位置、Skill 原文和系统安全凭据条目保持兼容。
 
-主要个人修改包括 Gemini 免费中文翻译、一次授权、独立本地缓存、渐进阅读、中英对照及断点续译。本次进一步扩大安全批次，按已记录的项目免费 RPM 调度，复用解析结果并减少重复校验和缓存写入。
+主要个人修改包括 Gemini 免费中文翻译、一次授权、独立本地缓存、渐进阅读、中英对照及断点续译。本次统一桌面布局、通用组件和全局滚动条，新增独立 Presets 页面、Agent 筛选与在线示例预览；原有翻译调度、缓存和管理流程保持不变。
+
+[在线体验](https://yann359.github.io/skills-manager/) · [下载安装包](https://github.com/yann359/skills-manager/releases/latest) · [UI 实现与验证](UI_REDESIGN.md)
 
 免费额度由用户在 Google AI Studio 核实并记录；成功响应不能证明计费层级。软件不自动启用账单、付费模型或无限重试。Gemini API Key 保存在系统安全凭据中，不存入此仓库。
 

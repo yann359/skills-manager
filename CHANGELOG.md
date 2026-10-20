@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.41.1-yann.2] - 2026-10-20
+
+- Redesigned the desktop shell, Dashboard, library filters, Presets and document reader with a shared neutral/teal design system.
+- Restored visible native scrollbars, independent sidebar scrolling and keyboard access across all content surfaces.
+- Preserved existing management workflows and translation caching/resume; included the preceding Agent-switch safety changes.
+- Added a static browser preview with fictional data and refreshed Windows installers.
+
 ## [1.41.0] - 2026-10-11
 
 ### Release Overview

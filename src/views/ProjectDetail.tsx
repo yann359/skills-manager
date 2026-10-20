@@ -966,6 +966,8 @@ export function ProjectDetail() {
                 <RefreshCw className={cn("h-4 w-4", loading && "animate-spin")} />
               </button>
               <button
+                aria-label={t("ui.cardView")}
+                aria-pressed={viewMode === "grid"}
                 onClick={() => setViewMode("grid")}
                 className={cn(
                   "rounded-md p-2 transition-colors outline-none",
@@ -975,6 +977,8 @@ export function ProjectDetail() {
                 <LayoutGrid className="h-4 w-4" />
               </button>
               <button
+                aria-label={t("ui.listView")}
+                aria-pressed={viewMode === "list"}
                 onClick={() => setViewMode("list")}
                 className={cn(
                   "rounded-md p-2 transition-colors outline-none",

@@ -377,21 +377,22 @@ export function Sidebar() {
 
   return (
     <>
-      <div className="w-[220px] flex-shrink-0 bg-bg-secondary border-r border-border-subtle h-full flex flex-col select-none relative z-10">
+      <div className="app-sidebar w-[220px] flex-shrink-0 bg-bg-secondary border-r border-border-subtle h-full flex flex-col select-none relative z-10">
         {/* Traffic-light safe zone */}
         <div className="h-[38px] shrink-0" />
         {/* App logo — sits below macOS window controls */}
         <div className="flex items-center px-3 gap-3 pb-2.5 shrink-0">
           <img
-            src="/icons/32x32.png"
+            src={`${import.meta.env.BASE_URL}icons/32x32.png`}
             alt="logo"
             className="w-[24px] h-[24px] shrink-0"
           />
-          <span className="text-[16px] font-semibold text-secondary tracking-tight truncate leading-[22px]">
+          <span className="text-[14px] font-semibold text-secondary tracking-tight truncate leading-[22px]">
             {t("app.name")}
           </span>
         </div>
 
+        <div className="px-5 pb-2 pt-3 text-[10px] font-semibold uppercase tracking-[0.12em] text-faint">Workspace</div>
         {/* Nav */}
         <div className="px-2.5 space-y-0.5 shrink-0">
           {NAV_ITEMS.map((item) => {
@@ -401,6 +402,7 @@ export function Sidebar() {
               <Link
                 key={item.path}
                 to={item.path}
+                aria-current={isActive ? "page" : undefined}
                 className={cn(
                   "flex items-center gap-2.5 px-2.5 py-[7px] rounded-md text-sm font-medium transition-colors outline-none",
                   isActive
@@ -421,6 +423,7 @@ export function Sidebar() {
         {/* Scrollable section */}
         <div tabIndex={0} className="app-scroll-region px-2.5 flex-1">
 
+          <Link to="/presets" className={cn("sidebar-presets-link", location.pathname === "/presets" && "bg-accent-bg text-accent")}><Layers className="h-4 w-4" />{t("ui.managePresets")}<span className="ml-auto text-[11px] text-faint">{presets.length}</span></Link>
           {/* ── Presets ── */}
           <div className="mb-1.5 px-2.5 flex items-center gap-1">
             <button

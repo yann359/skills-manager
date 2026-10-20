@@ -1,11 +1,12 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
-import { i18nReady } from "./i18n";
 import { logStartupEvent } from "./lib/tauri";
 import "./index.css";
-import App from "./App.tsx";
 
+if (import.meta.env.MODE === "demo") await import("./demo/bootstrap");
+const { i18nReady } = await import("./i18n");
 await i18nReady;
+const { default: App } = await import("./App");
 logStartupEvent("i18n_ready", performance.now()).catch(() => {});
 
 createRoot(document.getElementById("root")!).render(

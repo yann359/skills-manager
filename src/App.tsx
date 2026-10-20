@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { HashRouter, BrowserRouter, Routes, Route } from "react-router-dom";
 import { Toaster } from "sonner";
 import { AppProvider } from "./context/AppContext";
 import { ThemeProvider, useThemeContext } from "./context/ThemeContext";
@@ -13,6 +13,7 @@ import { CODING_WORKSPACE_CONFIG, LOBSTER_WORKSPACE_CONFIG } from "./views/works
 import { InstallSkills } from "./views/InstallSkills";
 import { Settings } from "./views/Settings";
 import { ProjectDetail } from "./views/ProjectDetail";
+import { Presets } from "./views/Presets";
 import { Backup } from "./views/Backup";
 
 function ThemedToaster() {
@@ -32,11 +33,13 @@ function ThemedToaster() {
   );
 }
 
+const Router = import.meta.env.MODE === "demo" ? HashRouter : BrowserRouter;
+
 function App() {
   return (
     <ThemeProvider>
       <AppProvider>
-        <BrowserRouter>
+        <Router>
           <Routes>
             <Route element={<Layout />}>
               <Route path="/" element={<Dashboard />} />
@@ -46,6 +49,7 @@ function App() {
               <Route path="/lobster-workspace" element={<WorkspaceView config={LOBSTER_WORKSPACE_CONFIG} />} />
               <Route path="/lobster-workspace/:agentKey" element={<WorkspaceView config={LOBSTER_WORKSPACE_CONFIG} />} />
               <Route path="/install" element={<InstallSkills />} />
+              <Route path="/presets" element={<Presets />} />
               <Route path="/backup" element={<Backup />} />
               <Route path="/project/:id" element={<ProjectDetail />} />
               <Route path="/settings" element={<Settings />} />
@@ -54,7 +58,7 @@ function App() {
           <HelpDialog />
           <CloseActionGuard />
           <FirstRunRestoreDialog />
-        </BrowserRouter>
+        </Router>
         <ThemedToaster />
       </AppProvider>
     </ThemeProvider>

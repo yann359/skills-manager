@@ -36,7 +36,7 @@ export function ToggleSwitch({
       className={cn(
         "relative h-5 w-[34px] shrink-0 rounded-full outline-none transition-colors",
         "focus-visible:ring-2 focus-visible:ring-accent",
-        checked ? "bg-accent-light" : "bg-surface-active",
+        checked ? "bg-accent" : "bg-control-off",
         loading
           ? "cursor-wait opacity-70"
           : disabled
@@ -47,7 +47,7 @@ export function ToggleSwitch({
     >
       <span
         className={cn(
-          "absolute top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-white shadow-[0_1px_2px_rgba(0,0,0,0.25)] transition-all",
+          "absolute top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-white shadow-[0_1px_2px_rgba(0,0,0,0.25)] transition-[left]",
           checked ? "left-[16px]" : "left-0.5"
         )}
       >

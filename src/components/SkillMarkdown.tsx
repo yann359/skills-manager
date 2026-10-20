@@ -16,25 +16,25 @@ export function SkillMarkdown({ content, className }: SkillMarkdownProps) {
   const markdown = stripMarkdownFrontmatter(content);
 
   return (
-    <article className={cn("mx-auto min-w-0 w-full max-w-[1240px] [overflow-wrap:anywhere] text-[13px] leading-6 text-secondary", className)}>
+    <article className={cn("skill-markdown mx-auto min-w-0 w-full max-w-[880px] [overflow-wrap:anywhere] text-[13px] leading-6 text-secondary", className)}>
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
         components={{
           h1: ({ className, ...props }) => (
             <h1
-              className={cn("mb-4 text-[28px] font-semibold leading-tight text-primary", className)}
+              className={cn("mb-3 text-[22px] font-semibold leading-tight text-primary", className)}
               {...props}
             />
           ),
           h2: ({ className, ...props }) => (
             <h2
-              className={cn("mb-3 mt-8 text-[20px] font-semibold leading-tight text-primary", className)}
+              className={cn("mb-2 mt-6 text-[17px] font-semibold leading-tight text-primary", className)}
               {...props}
             />
           ),
           h3: ({ className, ...props }) => (
             <h3
-              className={cn("mb-2 mt-6 text-[16px] font-semibold leading-tight text-primary", className)}
+              className={cn("mb-2 mt-5 text-[14px] font-semibold leading-tight text-primary", className)}
               {...props}
             />
           ),
@@ -100,14 +100,14 @@ export function SkillMarkdown({ content, className }: SkillMarkdownProps) {
           pre: ({ className, ...props }) => (
             <pre
               className={cn(
-                "mb-4 overflow-x-auto rounded-xl border border-border-subtle bg-background px-4 py-3",
+                "mb-4 overflow-x-auto rounded-lg border border-border-subtle bg-background px-4 py-3",
                 className
               )}
               {...props}
             />
           ),
           table: ({ className, ...props }) => (
-            <div className="mb-4 overflow-x-auto rounded-xl border border-border-subtle">
+            <div className="mb-4 overflow-x-auto rounded-lg border border-border-subtle">
               <table className={cn("min-w-full border-collapse text-left text-[13px]", className)} {...props} />
             </div>
           ),

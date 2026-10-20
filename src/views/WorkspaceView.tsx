@@ -1,3 +1,5 @@
+import { ToggleSwitch } from "../components/ToggleSwitch";
+import { LoadingState } from "../components/ui";
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useParams, useNavigate, Navigate } from "react-router-dom";
 import {
@@ -872,17 +874,9 @@ export function WorkspaceView({ config }: { config: WorkspaceConfig }) {
     <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
       {skill.blocked_reason && <span className="text-[11px] text-amber-600" title={[skill.blocked_reason, ...skill.exposure_paths].join("\n")}>{t("agentSwitch.limited")}</span>}
       {skill.managed ? (
-        <button type="button" role="switch" aria-checked={skill.enabled}
-          aria-label={`${skill.name} · ${t(skill.enabled ? "agentSwitch.disable" : "agentSwitch.enable")}`}
-          title={skill.blocked_reason ?? t("agentSwitch.reloadHint")}
-          disabled={!!switchPending || !!skill.blocked_reason}
-          onClick={() => void handleAgentSwitch(skill)}
-          className={cn("relative inline-flex h-6 w-10 shrink-0 items-center rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent disabled:opacity-50", skill.enabled ? "bg-emerald-500" : "bg-surface-active")}
-        >
-          <span className={cn("flex h-5 w-5 items-center justify-center rounded-full bg-white shadow-sm transition-transform", skill.enabled ? "translate-x-[18px]" : "translate-x-[2px]")}>
-            {switchPending === localSkillKey(skill) && <Loader2 className="h-3 w-3 animate-spin text-muted" />}
-          </span>
-        </button>
+        <ToggleSwitch checked={skill.enabled} onChange={() => void handleAgentSwitch(skill)}
+          disabled={!!switchPending || !!skill.blocked_reason} loading={switchPending === localSkillKey(skill)}
+          title={skill.blocked_reason ?? `${skill.name} · ${t(skill.enabled ? "agentSwitch.disable" : "agentSwitch.enable")}`} />
       ) : (
         <button type="button" disabled={!!switchPending || !!skill.blocked_reason} title={skill.blocked_reason ?? skill.path}
           className="rounded-lg px-2 py-1 text-[12px] text-accent hover:bg-surface-hover disabled:opacity-50"
@@ -1021,6 +1015,8 @@ export function WorkspaceView({ config }: { config: WorkspaceConfig }) {
                 <RefreshCw className={cn("h-4 w-4", localSkillsLoading && "animate-spin")} />
               </button>
               <button
+                aria-label={t("ui.cardView")}
+                aria-pressed={viewMode === "grid"}
                 onClick={() => setViewMode("grid")}
                 className={cn(
                   "rounded-md p-2 transition-colors outline-none",
@@ -1030,6 +1026,8 @@ export function WorkspaceView({ config }: { config: WorkspaceConfig }) {
                 <LayoutGrid className="h-4 w-4" />
               </button>
               <button
+                aria-label={t("ui.listView")}
+                aria-pressed={viewMode === "list"}
                 onClick={() => setViewMode("list")}
                 className={cn(
                   "rounded-md p-2 transition-colors outline-none",
@@ -1143,12 +1141,9 @@ export function WorkspaceView({ config }: { config: WorkspaceConfig }) {
         )}
       </div>
 
-      <p className="mb-3 text-[12px] leading-relaxed text-muted">{t("agentSwitch.reloadHint")} {t("agentSwitch.scopeHint")}</p>
+      <details className="rounded-lg border border-border-subtle bg-surface px-3 py-2 text-[12px] text-muted"><summary className="cursor-pointer font-medium">{t("ui.agentNotes")}</summary><p className="mt-2 leading-relaxed">{t("agentSwitch.reloadHint")} {t("agentSwitch.scopeHint")}</p></details>
       {localSkillsLoading ? (
-        <div className="flex items-center gap-2 py-4 text-[13px] text-muted">
-          <Loader2 className="h-3.5 w-3.5 animate-spin" />
-          {t("common.loading")}
-        </div>
+        <LoadingState label={t("common.loading")} />
       ) : visibleLocalSkills.length === 0 ? (
         <div className="flex min-h-[260px] flex-col items-center justify-center px-4 text-center">
           <Globe className="mb-4 h-12 w-12 text-faint" />

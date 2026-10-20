@@ -1,3 +1,4 @@
+import { SectionNav } from "../components/SectionNav";
 import { useState, useEffect, useCallback, useMemo } from "react";
 import {
   Folder,
@@ -1049,6 +1050,7 @@ export function Settings() {
 
   return (
     <div className="app-page app-page-narrow">
+      <SectionNav />
       <div className="app-page-header">
         <h1 className="app-page-title flex items-center gap-2">
           <Settings2 className="w-4 h-4 text-accent" />
@@ -1056,7 +1058,7 @@ export function Settings() {
         </h1>
       </div>
 
-      <div className="space-y-6">
+      <div className="space-y-5">
         <AiTranslationSettings />
         {/* Agent status */}
         <section>

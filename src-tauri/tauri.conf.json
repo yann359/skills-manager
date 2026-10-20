@@ -1,7 +1,7 @@
 {
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
   "productName": "skills-manager",
-  "version": "1.41.1-yann.1",
+  "version": "1.41.1-yann.2",
   "identifier": "com.agentskills.desktop",
   "build": {
     "frontendDist": "../dist",
@@ -46,7 +46,7 @@
     },
     "windows": {
       "wix": {
-        "version": "1.41.1001"
+        "version": "1.41.1002"
       }
     }
   }

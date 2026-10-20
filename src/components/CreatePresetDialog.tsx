@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { X } from "lucide-react";
+import { Dialog } from "./ui";
+import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
 import { cn } from "../utils";
 import { PRESET_ICON_OPTIONS } from "../lib/presetIcons";
@@ -20,7 +21,7 @@ export function CreatePresetDialog({ open, onClose, onCreate }: Props) {
   if (!open) return null;
 
   const handleCreate = async () => {
-    if (!name.trim()) return;
+    if (!name.trim() || loading) return;
     setLoading(true);
     try {
       await onCreate(name.trim(), description.trim() || undefined, icon);
@@ -28,6 +29,8 @@ export function CreatePresetDialog({ open, onClose, onCreate }: Props) {
       setDescription("");
       setIcon(PRESET_ICON_OPTIONS[0].key);
       onClose();
+    } catch (error) {
+      toast.error(String(error));
     } finally {
       setLoading(false);
     }
@@ -36,16 +39,7 @@ export function CreatePresetDialog({ open, onClose, onCreate }: Props) {
   const inputClass = "w-full bg-background border border-border-subtle rounded-lg px-3 py-2 text-[13px] text-secondary focus:outline-none focus:border-border transition-all placeholder-faint";
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative bg-surface border border-border rounded-xl w-full max-w-[400px] p-5 shadow-2xl">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-[13px] font-semibold text-primary">{t("preset.create")}</h2>
-          <button onClick={onClose} className="text-muted hover:text-secondary p-1 rounded transition-colors outline-none">
-            <X className="w-4 h-4" />
-          </button>
-        </div>
-
+    <Dialog open={open} locked={loading} onClose={onClose} title={t("preset.create")}>
         <div className="space-y-3">
           <div>
             <label className="block text-[13px] font-medium text-tertiary mb-1">{t("preset.name")}</label>
@@ -110,7 +104,6 @@ export function CreatePresetDialog({ open, onClose, onCreate }: Props) {
             </button>
           </div>
         </div>
-      </div>
-    </div>
+    </Dialog>
   );
 }

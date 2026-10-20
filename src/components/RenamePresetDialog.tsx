@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
-import { X } from "lucide-react";
+import { Dialog } from "./ui";
+import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
 import { cn } from "../utils";
 import { PRESET_ICON_OPTIONS, getPresetIconOption } from "../lib/presetIcons";
@@ -49,7 +50,7 @@ export function RenamePresetDialog({
     description.trim() === (currentDescription || "").trim();
 
   const handleRename = async () => {
-    if (!name.trim() || unchanged) {
+    if (!name.trim() || unchanged || loading) {
       return;
     }
     setLoading(true);
@@ -62,6 +63,8 @@ export function RenamePresetDialog({
         description.trim() || undefined,
       );
       onClose();
+    } catch (error) {
+      toast.error(String(error));
     } finally {
       setLoading(false);
     }
@@ -70,16 +73,7 @@ export function RenamePresetDialog({
   const inputClass = "w-full bg-background border border-border-subtle rounded-lg px-3 py-2 text-[13px] text-secondary focus:outline-none focus:border-border transition-all placeholder-faint";
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative bg-surface border border-border rounded-xl w-full max-w-[400px] p-5 shadow-2xl">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-[13px] font-semibold text-primary">{t("common.edit")}</h2>
-          <button onClick={onClose} className="text-muted hover:text-secondary p-1 rounded transition-colors outline-none">
-            <X className="w-4 h-4" />
-          </button>
-        </div>
-
+    <Dialog open={open} locked={loading} onClose={onClose} title={t("common.edit")}>
         <div className="space-y-3">
           <div>
             <label className="block text-[13px] font-medium text-tertiary mb-1">{t("preset.name")}</label>
@@ -145,7 +139,6 @@ export function RenamePresetDialog({
             </button>
           </div>
         </div>
-      </div>
-    </div>
+    </Dialog>
   );
 }

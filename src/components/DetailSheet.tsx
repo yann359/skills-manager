@@ -3,12 +3,15 @@ import { X } from "lucide-react";
 import { useEffect, useId, useRef, type ReactNode } from "react";
 
 import { IS_MACOS } from "../lib/platform";
+import { useTranslation } from "react-i18next";
+import { Button } from "./ui";
 
 interface DetailSheetProps {
   open: boolean;
   title: ReactNode;
   description?: ReactNode;
   meta?: ReactNode;
+  actions?: ReactNode;
   onClose: () => void;
   children: ReactNode;
 }
@@ -18,9 +21,11 @@ export function DetailSheet({
   title,
   description,
   meta,
+  actions,
   onClose,
   children,
 }: DetailSheetProps) {
+  const { t } = useTranslation();
   const sheetRef = useRef<HTMLDivElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const titleId = useId();
@@ -68,21 +73,16 @@ export function DetailSheet({
         onClick={onClose}
       />
       <div className="absolute inset-0 z-10 flex min-h-0 flex-col overflow-hidden border-l border-border-subtle bg-bg-secondary">
-        <button
-          onClick={onClose}
-          className="absolute top-4 right-5 z-10 shrink-0 rounded-md p-1.5 text-muted transition-colors outline-none hover:bg-surface-hover hover:text-secondary"
-        >
-          <X className="h-4 w-4" />
-        </button>
-        <div ref={scrollRef} tabIndex={0} role="region" aria-labelledby={titleId} className="app-scroll-region flex-1 px-6 pt-5 pb-6">
-          <h2 id={titleId} className="mb-3 min-w-0 pr-10 text-[28px] font-semibold leading-tight tracking-tight text-primary">
-            <span className="block">{title}</span>
-          </h2>
+        <header className="flex min-h-14 shrink-0 items-center justify-between gap-3 border-b border-border-subtle bg-surface px-5 py-2">
+          <div className="min-w-0"><p className="mb-0.5 text-[10px] font-medium uppercase tracking-wider text-muted">Skill · {t("ui.document")}</p><h2 id={titleId} className="truncate text-[17px] font-semibold tracking-tight text-primary">{title}</h2></div>
+          <div className="flex shrink-0 items-center gap-2">{actions}<Button variant="ghost" onClick={onClose} aria-label={t("ui.back")}><X className="h-4 w-4" /></Button></div>
+        </header>
+        <div ref={scrollRef} tabIndex={0} role="region" aria-labelledby={titleId} className="app-scroll-region flex-1 px-5 pb-6 pt-3">
           {description ? (
             <div className="text-[15px] leading-7 text-secondary">{description}</div>
           ) : null}
-          {meta ? <div className="mt-4">{meta}</div> : null}
-          <div className="mt-5">{children}</div>
+          {meta ? <div className="mx-auto mb-3 max-w-[1100px]">{meta}</div> : null}
+          <div className="mx-auto max-w-[1100px]">{children}</div>
         </div>
       </div>
     </div>,

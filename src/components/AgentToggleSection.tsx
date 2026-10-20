@@ -34,8 +34,8 @@ export function AgentToggleSection({
   const enabledAvailableCount = availableItems.filter((item) => item.enabled).length;
 
   return (
-    <div className={cn("rounded-xl border border-border-subtle", className)}>
-      <div className="border-b border-border-subtle px-6 py-2.5">
+    <div className={cn("rounded-lg bg-surface", className)}>
+      <div className="px-3 py-2">
         <div className="flex items-center justify-between gap-2 text-[13px]">
           <div className="flex min-w-0 items-center gap-2">
             <span className="font-medium text-secondary">{t("mySkills.agentTogglesTitle")}</span>

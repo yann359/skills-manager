@@ -724,8 +724,9 @@ export function InstallSkills() {
   return (
     <div className="app-page gap-4">
       <div className="app-page-header border-b-0 pb-0">
-        <h1 className="app-page-title mb-4">{t("install.title")}</h1>
-        <div className="flex gap-1 border-b border-border-subtle">
+        <h1 className="app-page-title mb-1">{t("install.title")}</h1>
+        <p className="app-page-subtitle mb-3">{t("ui.installHint")}</p>
+        <div className="flex gap-1 border-b border-border-subtle" role="group" aria-label={t("install.title")}>
           {[
             { id: "market" as const, label: t("install.browseMarket"), icon: Box },
             { id: "local" as const, label: t("install.localInstall"), icon: UploadCloud },
@@ -736,6 +737,7 @@ export function InstallSkills() {
             return (
               <button
                 key={tab.id}
+                aria-pressed={isActive}
                 onClick={() => switchTab(tab.id)}
                 className={cn(
                   "mr-4 flex items-center gap-1.5 border-b-2 px-1 pb-1.5 text-[13px] font-medium transition-colors outline-none",

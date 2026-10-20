@@ -4,6 +4,19 @@
 
 <h1 align="center">Skills Manager</h1>
 
+## yann359 桌面个人版
+
+**[在线体验](https://yann359.github.io/skills-manager/)** · **[下载 Windows 安装包](https://github.com/yann359/skills-manager/releases/latest)** · [更新说明](release-notes/1.41.1-yann.2.md)
+
+当前版本 **1.41.1-yann.2**：紧凑工作区、全局可拖动滚动条、Agent 筛选、
+独立 Presets 页面和更舒适的文档阅读界面。在线预览使用虚构示例数据；
+管理本机 Skills 请安装桌面版。现有配置格式与数据存储位置保持兼容。
+
+![新版工作区](assets/demo/workspace-yann.png)
+
+本版本基于以下 MIT 开源项目，保留原作者署名。详见
+[个人版说明](PERSONAL_RELEASE.md)及 [UI 实现记录](UI_REDESIGN.md)。
+
 <p align="center">
   一个应用，统一管理所有 AI 编码工具的 Skills。
 </p>

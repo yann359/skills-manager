@@ -1,3 +1,4 @@
+import { SectionNav } from "../components/SectionNav";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   AlertTriangle,
@@ -778,6 +779,7 @@ export function Backup() {
 
   return (
     <div className="app-page">
+      <SectionNav />
       <div className="app-page-header pr-2 pb-1 flex items-center justify-between gap-3">
         <div>
           <h1 className="app-page-title">{t("backup.title")}</h1>

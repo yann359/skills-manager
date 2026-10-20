@@ -6,7 +6,11 @@ import {
   Github,
   HardDrive,
   Globe,
+  Copy,
 } from "lucide-react";
+import { writeText } from "@tauri-apps/plugin-clipboard-manager";
+import { toast } from "sonner";
+import { Button } from "./ui";
 import { useTranslation } from "react-i18next";
 import { cn } from "../utils";
 import {
@@ -227,6 +231,7 @@ function SkillDetailPanelContent({
   const meta = (
     <>
       <div className="flex flex-wrap items-center gap-2 text-[12.5px] text-muted">
+        <span className="inline-flex items-center gap-1 rounded-md bg-surface-hover px-2 py-0.5 text-[11px]">{sourceIcon(skill.source_type)}{sourceTypeLabel(skill.source_type)}</span>
         {tools && <SyncDots skill={skill} tools={tools} size="sm" includeOrphan />}
         {skill.tags.length > 0 && (
           <>
@@ -242,20 +247,20 @@ function SkillDetailPanelContent({
           </>
         )}
       </div>
-      <div className="mt-3 flex min-w-0 items-center gap-2 text-[13px] text-muted">
+      <div className="mt-2 flex min-w-0 items-center gap-2 text-[13px] text-muted">
         <Folder className="h-3.5 w-3.5 shrink-0" />
         <span className="font-mono truncate" title={skill.central_path}>
           {skill.central_path}
         </span>
       </div>
-      {metadataItems.length > 0 && (
-        <div className="mt-4 rounded-xl border border-border-subtle bg-surface/70">
+      {metadataItems.length > 1 && (
+        <div className="mt-2 rounded-lg border border-border-subtle bg-surface">
           <button
             type="button"
             onClick={() => setIsMetadataExpanded((prev) => !prev)}
             aria-expanded={isMetadataExpanded}
             aria-controls="skill-source-metadata"
-            className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left"
+            className="flex w-full items-center justify-between gap-3 px-3 py-2 text-left"
           >
             <span className="flex min-w-0 items-center gap-2">
               <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-border-subtle bg-bg-secondary px-2 py-1 text-[12px] text-muted">
@@ -280,7 +285,7 @@ function SkillDetailPanelContent({
             </span>
           </button>
           {isMetadataExpanded && (
-            <div id="skill-source-metadata" className="border-t border-border-subtle px-4 py-3">
+            <div id="skill-source-metadata" className="border-t border-border-subtle px-3 py-2">
               <div className="grid gap-2 md:grid-cols-2">
                 {metadataItems.map((item) => (
                   <div key={item.label} className="min-w-0">
@@ -307,6 +312,7 @@ function SkillDetailPanelContent({
     <DetailSheet
       open={true}
       title={skill.name}
+      actions={<Button onClick={() => void writeText(skill.central_path).then(() => toast.success(t("ui.pathCopied"))).catch(error => toast.error(String(error)))}><Copy className="h-3.5 w-3.5" />{t("ui.copyPath")}</Button>}
       description={contentTab === "diff" ? skill.description : undefined}
       meta={meta}
       onClose={onClose}
@@ -321,11 +327,14 @@ function SkillDetailPanelContent({
       )}
 
       {projects && projects.length > 0 && (
+        <details className="mb-3 rounded-lg border border-border-subtle px-3 py-2 text-[12px] text-muted">
+          <summary className="cursor-pointer font-medium">{t("sidebar.projects")} · {projects.length}</summary>
         <SkillProjectsSection
           skill={skill}
           projects={projects}
           onChanged={onProjectsChanged}
         />
+        </details>
       )}
 
       {supportsSourceDiff && (

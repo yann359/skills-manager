@@ -36,6 +36,7 @@ export function CardActionMenu({ actions, label, className, onOpenChange }: Prop
 
   useEffect(() => {
     if (!open) return;
+    const frame = requestAnimationFrame(() => containerRef.current?.querySelector<HTMLButtonElement>('[role="menuitem"]:not(:disabled)')?.focus());
     const handlePointer = (e: MouseEvent) => {
       if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
         setOpenState(false);
@@ -47,10 +48,12 @@ export function CardActionMenu({ actions, label, className, onOpenChange }: Prop
       // listeners behind it (multi-select mode would exit and drop the selection).
       e.stopPropagation();
       setOpenState(false);
+      containerRef.current?.querySelector<HTMLButtonElement>('[aria-haspopup="menu"]')?.focus();
     };
     document.addEventListener("mousedown", handlePointer);
     document.addEventListener("keydown", handleEscape);
     return () => {
+      cancelAnimationFrame(frame);
       document.removeEventListener("mousedown", handlePointer);
       document.removeEventListener("keydown", handleEscape);
     };
@@ -62,11 +65,13 @@ export function CardActionMenu({ actions, label, className, onOpenChange }: Prop
   if (actions.length === 0) return null;
 
   return (
-    <div ref={containerRef} className={cn("relative shrink-0", className)}>
+    <div ref={containerRef} className={cn("relative shrink-0 focus-within:opacity-100 group-focus-within:opacity-100", className)}>
       <button
         type="button"
         title={label}
         aria-label={label}
+        aria-haspopup="menu"
+        aria-expanded={open}
         onClick={(e) => {
           e.stopPropagation();
           setOpenState(!open);
@@ -80,13 +85,25 @@ export function CardActionMenu({ actions, label, className, onOpenChange }: Prop
       </button>
       {open && (
         <div
+          role="menu"
+          aria-label={label}
           className="absolute right-0 top-full z-30 mt-1 min-w-[156px] rounded-lg border border-border bg-surface p-1 shadow-lg"
           onClick={(e) => e.stopPropagation()}
+          onKeyDown={event => {
+            if (!["ArrowDown", "ArrowUp", "Home", "End"].includes(event.key)) return;
+            event.preventDefault();
+            const items = [...event.currentTarget.querySelectorAll<HTMLButtonElement>('button:not(:disabled)')];
+            if (!items.length) return;
+            const current = items.indexOf(document.activeElement as HTMLButtonElement);
+            const next = event.key === "Home" ? 0 : event.key === "End" ? items.length - 1 : (current + (event.key === "ArrowDown" ? 1 : -1) + items.length) % items.length;
+            items[next]?.focus();
+          }}
         >
           {actions.map((action) => (
             <button
               key={action.key}
               type="button"
+              role="menuitem"
               disabled={action.disabled}
               onClick={(e) => {
                 e.stopPropagation();

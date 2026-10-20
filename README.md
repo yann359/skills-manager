@@ -4,6 +4,20 @@
 
 <h1 align="center">Skills Manager</h1>
 
+## yann359 desktop edition
+
+**[Open live preview](https://yann359.github.io/skills-manager/)** · **[Download Windows installer](https://github.com/yann359/skills-manager/releases/latest)** · [Release notes](release-notes/1.41.1-yann.2.md)
+
+Version **1.41.1-yann.2** includes the compact workspace redesign, visible native
+scrollbars, Agent filters and a dedicated Presets page. The browser preview uses
+fictional sample data; install the desktop app to manage your own Skills.
+Existing configuration and storage locations remain compatible.
+
+![Redesigned workspace](assets/demo/workspace-yann.png)
+
+This edition builds on the original MIT-licensed project below. See
+[personal release details](PERSONAL_RELEASE.md) and [UI implementation notes](UI_REDESIGN.md).
+
 <p align="center">
   One app to manage AI agent skills across all your coding tools.
 </p>

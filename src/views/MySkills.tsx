@@ -153,6 +153,7 @@ export function MySkills() {
   } = useApp();
   const [viewMode, setViewMode] = useSkillViewMode();
   const [filterMode, setFilterMode] = useState<"all" | "enabled" | "available">("all");
+  const [agentFilter, setAgentFilter] = useState("all");
   const [sourceFilters, setSourceFilters] = useState<Set<string>>(new Set());
   const [tagFilters, setTagFilters] = useState<Set<string>>(new Set());
   const [allTags, setAllTags] = useState<string[]>([]);
@@ -292,6 +293,7 @@ export function MySkills() {
         displayName.toLowerCase().includes(search.toLowerCase()) ||
         (skill.description || "").toLowerCase().includes(search.toLowerCase());
       if (!matchesSearch) return false;
+      if (agentFilter !== "all" && !skill.targets.some(target => target.tool === agentFilter)) return false;
 
       if (sourceFilters.size > 0 && !sourceFilters.has(skill.source_type)) return false;
 
@@ -327,7 +329,7 @@ export function MySkills() {
     }
 
     return result;
-  }, [skills, skillDisplayNames, search, sourceFilters, tagFilters, filterMode, viewedPreset, presetSkillOrder]);
+  }, [skills, skillDisplayNames, agentFilter, search, sourceFilters, tagFilters, filterMode, viewedPreset, presetSkillOrder]);
 
   const {
     isMultiSelect, setIsMultiSelect,
@@ -1108,7 +1110,7 @@ export function MySkills() {
   };
 
   return (
-    <div className="app-page">
+    <div className="app-page skills-library">
       <div className="app-page-header pr-2 pb-1 flex items-center justify-between gap-3">
         <h1 className="app-page-title flex items-center gap-2">
           {t("mySkills.title")}
@@ -1116,12 +1118,12 @@ export function MySkills() {
             {skills.length}
           </span>
         </h1>
-        <ChineseSummaryToggle />
+        <div className="flex items-center gap-2"><ChineseSummaryToggle /><button className="app-button-primary" onClick={() => navigate("/install")}><Plus className="h-3.5 w-3.5" />{t("install.title")}</button></div>
       </div>
 
       <div className="app-toolbar">
-        <div className="flex flex-1 items-center gap-3">
-          <div className="relative w-full min-w-[200px] max-w-[280px]">
+        <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
+          <div className="relative w-full min-w-[180px] max-w-[320px]">
             <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted" />
             <input
               type="text"
@@ -1192,7 +1194,9 @@ export function MySkills() {
             </button>
             <span aria-hidden="true" className="mx-1 h-5 w-px shrink-0 self-center bg-border-subtle" />
             <button
-              onClick={() => setViewMode("grid")}
+              aria-label={t("ui.cardView")}
+                aria-pressed={viewMode === "grid"}
+                onClick={() => setViewMode("grid")}
               className={cn(
                 "rounded-md p-2 transition-colors outline-none",
                 viewMode === "grid" ? "bg-surface-active text-secondary" : "text-muted hover:text-tertiary"
@@ -1201,7 +1205,9 @@ export function MySkills() {
               <LayoutGrid className="h-4 w-4" />
             </button>
             <button
-              onClick={() => setViewMode("list")}
+              aria-label={t("ui.listView")}
+                aria-pressed={viewMode === "list"}
+                onClick={() => setViewMode("list")}
               className={cn(
                 "rounded-md p-2 transition-colors outline-none",
                 viewMode === "list" ? "bg-surface-active text-secondary" : "text-muted hover:text-tertiary"
@@ -1228,7 +1234,18 @@ export function MySkills() {
         </div>
       </div>
 
-      <div className="flex flex-wrap items-center gap-1 px-1 -mt-2 -mb-3">
+      <div className="library-filters">
+        <select className="app-input" aria-label={t("ui.agentFilter")} value={agentFilter} onChange={event => setAgentFilter(event.target.value)}>
+          <option value="all">{t("ui.allAgents")}</option>
+          {tools.filter(tool => tool.installed).map(tool => <option key={tool.key} value={tool.key}>{tool.display_name}</option>)}
+        </select>
+        <select className="app-input" aria-label={t("ui.scope")} value="library" onChange={event => navigate(event.target.value)}>
+          <option value="library">{t("ui.centralLibrary")}</option>
+          <option value="/global-workspace">{t("ui.globalScope")}</option>
+          {projects.map(project => <option key={project.id} value={`/project/${project.id}`}>{t("ui.projectScope")} · {project.name}</option>)}
+        </select>
+        <span className="mx-1 h-4 w-px bg-border-subtle" />
+        <span className="text-[11px] text-muted">{t("ui.source")}</span>
         {(["local", "import", "git", "skillssh"] as const).map((src) => (
           <button
             key={src}
@@ -1378,8 +1395,8 @@ export function MySkills() {
             className={cn(
               "pb-8",
               viewMode === "grid"
-                ? "grid grid-cols-2 gap-3 lg:grid-cols-3"
-                : "flex flex-col gap-0.5"
+                ? "grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3"
+                : "skill-table flex flex-col"
             )}
           >
           {filtered.map((skill) => {
@@ -1414,7 +1431,7 @@ export function MySkills() {
                 {(dragHandle) => (
                 <div
                   className={cn(
-                    "app-panel group relative flex h-full cursor-pointer flex-col shadow-card transition-all hover:-translate-y-px hover:border-border hover:shadow-card-hover",
+                    "app-panel skill-card group relative flex h-full cursor-pointer flex-col transition-colors hover:border-accent-border",
                     isMultiSelect && selectedIds.has(skill.id) && "ring-1 ring-accent border-accent/40"
                   )}
                   onClick={() =>
@@ -1515,6 +1532,7 @@ export function MySkills() {
                   </div>
 
                   <div className="px-3.5 pb-3">
+                    <p className="mb-1 truncate font-mono text-[10px] text-faint" title={skill.central_path}>{skill.central_path}</p>
                     <p className="text-[13px] leading-[18px] text-muted truncate">
                       <SkillSummary name={skill.name} description={skill.description} />
                     </p>
@@ -1675,7 +1693,7 @@ export function MySkills() {
               {(dragHandle) => (
               <div
                 className={cn(
-                  "app-panel group relative flex cursor-pointer items-center gap-3.5 rounded-xl border-transparent px-3.5 py-3 transition-all hover:border-border hover:bg-surface-hover",
+                  "app-panel group relative flex cursor-pointer items-center gap-3 rounded-lg border-transparent px-3 py-2.5 transition-colors hover:border-border hover:bg-surface-hover",
                   isMultiSelect && selectedIds.has(skill.id) && "ring-1 ring-accent border-accent/40"
                 )}
                 onClick={() =>
@@ -1711,15 +1729,16 @@ export function MySkills() {
                 </div>
 
                 <h3
-                  className="w-[180px] shrink-0 truncate text-[14px] font-semibold text-secondary group-hover:text-primary"
+                  className="w-[190px] shrink-0 truncate text-[13px] font-semibold text-secondary group-hover:text-primary"
                   title={displayName}
                 >
                   {displayName}
                 </h3>
 
-                <p className="min-w-0 flex-1 truncate text-[13px] text-muted">
-                  <SkillSummary name={skill.name} description={skill.description} />
-                </p>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-[12px] text-muted"><SkillSummary name={skill.name} description={skill.description} /></p>
+                  <p className="mt-0.5 truncate font-mono text-[10px] text-faint" title={skill.central_path}>{skill.central_path}</p>
+                </div>
 
                 <div className="flex shrink-0 items-center gap-1.5">
                   {skill.tags.map((tag) => (
